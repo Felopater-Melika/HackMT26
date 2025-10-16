@@ -23,7 +23,6 @@ export default function RootLayout({
   return (
     <html lang='en' className={`${geist.variable}`} suppressHydrationWarning>
       <body>
-        {/* Temporarily disabled PostHog due to ad blocker issues */}
         <PostHogProvider>
           <TRPCReactProvider>{children}</TRPCReactProvider>
         </PostHogProvider>
