@@ -23,9 +23,9 @@ export default function RootLayout({
   return (
     <html lang='en' className={`${geist.variable}`} suppressHydrationWarning>
       <body>
-        <PostHogProvider>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
-        </PostHogProvider>
+        {/* <PostHogProvider> */}
+        <TRPCReactProvider>{children}</TRPCReactProvider>
+        {/* </PostHogProvider> */}
       </body>
     </html>
   );
