@@ -1,16 +1,10 @@
-import {
-  numeric,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-  integer,
-} from 'drizzle-orm/pg-core';
-import { user } from './auth-schema';
+import { uuid, text, timestamp, numeric, integer } from 'drizzle-orm/pg-core';
+import { createTable } from '../table';
 import { reports } from './reports';
+import { user } from './auth';
 
-export const payments = pgTable('payments', {
-  id: uuid('id').primaryKey(),
+export const payments = createTable('payments', {
+  id: uuid('id').primaryKey().defaultRandom(),
   userId: text('user_id')
     .references(() => user.id, { onDelete: 'cascade' })
     .notNull(),
@@ -21,10 +15,10 @@ export const payments = pgTable('payments', {
   currency: text('currency'),
   provider: text('provider'),
   status: text('status'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const userCredits = pgTable('user_credits', {
+export const userCredits = createTable('user_credits', {
   userId: text('user_id')
     .primaryKey()
     .references(() => user.id, { onDelete: 'cascade' }),

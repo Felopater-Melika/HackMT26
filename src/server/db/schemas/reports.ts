@@ -1,21 +1,22 @@
 import {
-  boolean,
-  integer,
-  jsonb,
-  numeric,
-  pgTable,
+  uuid,
   text,
   timestamp,
-  uuid,
+  boolean,
+  jsonb,
+  uniqueIndex,
+  integer,
+  numeric,
 } from 'drizzle-orm/pg-core';
-import { user } from './auth-schema';
+import { user } from './auth';
 import { scans } from './scans';
-import { medications } from './conditions';
+import { medications } from './medications';
+import { createTable } from '../table';
 
-export const reports = pgTable(
+export const reports = createTable(
   'reports',
   {
-    id: uuid('id').primaryKey(),
+    id: uuid('id').primaryKey().defaultRandom(),
     userId: text('user_id')
       .references(() => user.id, { onDelete: 'cascade' })
       .notNull(),
@@ -23,21 +24,24 @@ export const reports = pgTable(
     medicationId: uuid('medication_id').references(() => medications.id, {
       onDelete: 'cascade',
     }),
-    scope: text('scope'),
+    scope: text('scope').notNull(),
     summary: text('summary'),
     warnings: text('warnings'),
     aiModel: text('ai_model'),
     isPremium: boolean('is_premium'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
     rawJson: jsonb('raw_json'),
   },
   (t) => ({
-    uniqScanMed: { columns: [t.scanId, t.medicationId], isUnique: true },
+    scanMedicationUnique: uniqueIndex('reports_scan_medication_unique').on(
+      t.scanId,
+      t.medicationId
+    ),
   })
 );
 
-export const reportShares = pgTable('report_shares', {
-  id: uuid('id').primaryKey(),
+export const reportShares = createTable('report_shares', {
+  id: uuid('id').primaryKey().defaultRandom(),
   reportId: uuid('report_id')
     .references(() => reports.id, { onDelete: 'cascade' })
     .notNull(),
@@ -47,10 +51,10 @@ export const reportShares = pgTable('report_shares', {
   shareToken: text('share_token').unique(),
   expiresAt: timestamp('expires_at'),
   accessedAt: timestamp('accessed_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const reportMetrics = pgTable('report_metrics', {
+export const reportMetrics = createTable('report_metrics', {
   reportId: uuid('report_id')
     .primaryKey()
     .references(() => reports.id, { onDelete: 'cascade' }),
@@ -59,5 +63,5 @@ export const reportMetrics = pgTable('report_metrics', {
   tokensOutput: integer('tokens_output'),
   costUsd: numeric('cost_usd'),
   latencyMs: integer('latency_ms'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
 });
