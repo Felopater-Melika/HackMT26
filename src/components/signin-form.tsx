@@ -64,7 +64,7 @@ export function SigninForm({
               <div className='flex size-8 items-center justify-center rounded-md'>
                 <GalleryVerticalEnd className='size-6' />
               </div>
-              <span className='sr-only'>Acme Inc.</span>
+              <span className='sr-only'>Cliniq</span>
             </a>
             <h1 className='text-xl font-bold'>Welcome back</h1>
             <FieldDescription>
@@ -112,7 +112,10 @@ export function SigninForm({
               type='button'
               className='w-full bg-transparent'
               onClick={async () => {
-                await authClient.signIn.social({ provider: 'google' });
+                await authClient.signIn.social({
+                  provider: 'google',
+                  callbackURL: '/app',
+                });
               }}>
               <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
                 <path

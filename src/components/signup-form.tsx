@@ -26,6 +26,7 @@ export function SignupForm({
   const router = useRouter();
   const schema = z
     .object({
+      name: z.string().min(1, 'Name is required'),
       email: z.string().email('Enter a valid email'),
       password: z.string().min(6, 'At least 6 characters'),
       confirmPassword: z.string().min(6, 'At least 6 characters'),
@@ -48,6 +49,7 @@ export function SignupForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name: values.name,
           email: values.email,
           password: values.password,
         }),
@@ -74,13 +76,27 @@ export function SignupForm({
               <div className='flex size-8 items-center justify-center rounded-md'>
                 <GalleryVerticalEnd className='size-6' />
               </div>
-              <span className='sr-only'>Acme Inc.</span>
+              <span className='sr-only'>Cliniq</span>
             </a>
-            <h1 className='text-xl font-bold'>Welcome to Acme Inc.</h1>
+            <h1 className='text-xl font-bold'>Welcome to Cliniq.</h1>
             <FieldDescription>
               Already have an account? <a href='/app/signin'>Sign in</a>
             </FieldDescription>
           </div>
+          <Field>
+            <FieldLabel htmlFor='name'>Name</FieldLabel>
+            <Input
+              id='name'
+              type='text'
+              placeholder='John Doe'
+              {...register('name')}
+            />
+            {errors.name?.message ? (
+              <FieldDescription className='text-red-600'>
+                {errors.name.message}
+              </FieldDescription>
+            ) : null}
+          </Field>
           <Field>
             <FieldLabel htmlFor='email'>Email</FieldLabel>
             <Input
@@ -133,7 +149,10 @@ export function SignupForm({
               type='button'
               className='w-full bg-transparent'
               onClick={async () => {
-                await authClient.signIn.social({ provider: 'google' });
+                await authClient.signIn.social({
+                  provider: 'google',
+                  callbackURL: '/app',
+                });
               }}>
               <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
                 <path
