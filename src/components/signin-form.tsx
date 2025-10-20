@@ -1,5 +1,6 @@
 'use client';
 import type React from 'react';
+import { useState } from 'react';
 import { GalleryVerticalEnd } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -23,6 +24,11 @@ export function SigninForm({
   ...props
 }: React.ComponentProps<'div'>) {
   const router = useRouter();
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+
   const schema = z.object({
     email: z.string().email('Enter a valid email'),
     password: z.string().min(6, 'At least 6 characters'),
@@ -42,10 +48,22 @@ export function SigninForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+
+        // Better Auth returns 403 when email is not verified
+        if (res.status === 403) {
+          // Show verification UI
+          setVerificationEmail(values.email);
+          setShowVerification(true);
+          return;
+        }
+
         throw new Error(data?.message || 'Sign in failed');
       }
+
+      // Sign in successful and email verified
       router.push('/app');
     } catch (err: unknown) {
       setError('password', {
@@ -53,6 +71,59 @@ export function SigninForm({
       });
     }
   };
+
+  const handleResendVerification = async () => {
+    if (!verificationEmail) return;
+
+    setResendLoading(true);
+    setResendError(null);
+
+    try {
+      await authClient.sendVerificationEmail({ email: verificationEmail });
+      // Success - maybe show a toast or message
+    } catch (err: any) {
+      setResendError(err?.message || 'Failed to send verification email');
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  if (showVerification) {
+    return (
+      <div className={cn('flex flex-col gap-6', className)} {...props}>
+        <div className='flex flex-col items-center gap-2 text-center'>
+          <div className='flex size-8 items-center justify-center rounded-md'>
+            <GalleryVerticalEnd className='size-6' />
+          </div>
+          <h1 className='text-xl font-bold'>Check your email</h1>
+          <FieldDescription>
+            We've sent a verification link to{' '}
+            <strong>{verificationEmail}</strong>. Please check your inbox and
+            click the link to verify your account.
+          </FieldDescription>
+
+          {resendError && (
+            <FieldDescription className='text-red-600'>
+              {resendError}
+            </FieldDescription>
+          )}
+
+          <Button
+            onClick={handleResendVerification}
+            variant='outline'
+            disabled={resendLoading}
+            className='w-full'>
+            {resendLoading ? 'Sending...' : 'Resend Verification Email'}
+          </Button>
+
+          <FieldDescription>
+            <a href='/app/signin'>Back to sign in</a>
+          </FieldDescription>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -94,7 +165,7 @@ export function SigninForm({
               {...register('password')}
             />
             <FieldDescription className='text-right'>
-              <a href='#'>Forgot password?</a>
+              <a href='/app/forgot-password'>Forgot password?</a>
             </FieldDescription>
             {errors.password?.message ? (
               <FieldDescription className='text-red-600'>

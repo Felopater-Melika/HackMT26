@@ -1,6 +1,7 @@
 'use client';
 
 import type React from 'react';
+import { useState } from 'react';
 import { GalleryVerticalEnd } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -43,6 +44,11 @@ export function SignupForm({
     setError,
   } = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema) });
 
+  const [isEmailSent, setIsEmailSent] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
+
   const onSubmit = async (values: z.infer<typeof schema>) => {
     try {
       const res = await fetch('/api/auth/sign-up/email', {
@@ -58,13 +64,67 @@ export function SignupForm({
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.message || 'Sign up failed');
       }
-      router.push('/app');
+      // Don't redirect immediately - show verification message
+      setUserEmail(values.email);
+      setIsEmailSent(true);
     } catch (err: unknown) {
       setError('confirmPassword', {
         message: err instanceof Error ? err.message : 'Sign up failed',
       });
     }
   };
+
+  const handleResendVerification = async () => {
+    if (!userEmail) return;
+
+    setResendLoading(true);
+    setResendError(null);
+
+    try {
+      await authClient.sendVerificationEmail({ email: userEmail });
+      // Show success message briefly
+    } catch (err: any) {
+      setResendError(err?.message || 'Failed to send verification email');
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  if (isEmailSent) {
+    return (
+      <div className={cn('flex flex-col gap-6', className)} {...props}>
+        <div className='flex flex-col items-center gap-2 text-center'>
+          <div className='flex size-8 items-center justify-center rounded-md'>
+            <GalleryVerticalEnd className='size-6' />
+          </div>
+          <h1 className='text-xl font-bold'>Check your email</h1>
+          <FieldDescription>
+            We've sent a verification link to <strong>{userEmail}</strong>.
+            Please check your inbox and click the link to verify your account.
+          </FieldDescription>
+
+          {resendError && (
+            <FieldDescription className='text-red-600'>
+              {resendError}
+            </FieldDescription>
+          )}
+
+          <Button
+            onClick={handleResendVerification}
+            variant='outline'
+            disabled={resendLoading}
+            className='w-full'>
+            {resendLoading ? 'Sending...' : 'Resend Verification Email'}
+          </Button>
+
+          <FieldDescription>
+            <a href='/app/signin'>Back to sign in</a>
+          </FieldDescription>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <form onSubmit={handleSubmit(onSubmit)}>

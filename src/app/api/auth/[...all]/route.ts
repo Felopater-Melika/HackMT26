@@ -7,7 +7,6 @@ function logAuthRoute(
   reconstructedPath: string,
   status?: number
 ) {
-  // Minimal structured log to help debug routing
   console.log('[auth route]', {
     method,
     originalUrl,

@@ -12,10 +12,13 @@ import {
 } from '@polar-sh/better-auth';
 import { Polar } from '@polar-sh/sdk';
 import { nextCookies } from 'better-auth/next-js';
+import { Resend } from 'resend';
 
 const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN,
 });
+
+const resend = new Resend(env.RESEND_TOKEN);
 
 const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
@@ -23,9 +26,70 @@ const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'pg',
   }),
-
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    async sendVerificationEmail(
+      { user, url, token }: { user: any; url: string; token: string },
+      request?: Request
+    ) {
+      console.log('Sending verification email to:', user.email);
+      console.log('Verification URL:', url);
+
+      const verificationUrl = `${url}&callbackURL=/app`;
+      // !TODO: Clean up the emails
+      try {
+        const result = await resend.emails.send({
+          from: 'onboarding@resend.dev',
+          to: user.email,
+          subject: 'Verify your email address',
+          html: `
+            <h1>Verify your email</h1>
+            <p>Click the link below to verify your email address:</p>
+            <a href="${verificationUrl}" style="background: ##64748b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Email</a>
+            <p>If the button doesn't work, copy and paste this link:</p>
+            <p>${verificationUrl}</p>
+          `,
+        });
+        console.log('Email sent successfully:', result);
+      } catch (error) {
+        console.error('Failed to send verification email:', error);
+        throw error;
+      }
+    },
+  },
+  passwordReset: {
+    async sendPasswordResetEmail(
+      { user, url, token }: { user: any; url: string; token: string },
+      request?: Request
+    ) {
+      console.log('Sending password reset email to:', user.email);
+      console.log('Reset URL:', url);
+
+      try {
+        const result = await resend.emails.send({
+          from: 'onboarding@resend.dev',
+          to: user.email,
+          subject: 'Reset your password',
+          html: `
+            <h1>Reset your password</h1>
+            <p>Click the link below to reset your password:</p>
+            <a href="${url}" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+            <p>If the button doesn't work, copy and paste this link:</p>
+            <p>${url}</p>
+            <p>This link will expire in 1 hour.</p>
+          `,
+        });
+        console.log('Password reset email sent successfully:', result);
+      } catch (error) {
+        console.error('Failed to send password reset email:', error);
+        throw error;
+      }
+    },
   },
   socialProviders: {
     google: {
@@ -44,7 +108,7 @@ const auth = betterAuth({
           products: [
             {
               productId: 'd25da972-4853-4717-a37c-b81abce8c048',
-              slug: 'Scan', // Custom slug for easy reference in Checkout URL, e.g. /checkout/Scan
+              slug: 'Scan',
             },
           ],
           successUrl: env.POLAR_SUCCESS_URL,

@@ -7,7 +7,6 @@ const polarClient = new Polar({
 
 export async function createOrGetPolarCustomer(email: string, name?: string) {
   try {
-    // First, try to find existing customer
     const existingCustomers = [];
     const iterator = await polarClient.customers.list({ email });
     for await (const customer of iterator) {
@@ -15,14 +14,12 @@ export async function createOrGetPolarCustomer(email: string, name?: string) {
     }
 
     if (existingCustomers.length > 0) {
-      // Customer already exists, return the first one
       return existingCustomers[0];
     }
 
-    // Customer doesn't exist, create a new one
     const newCustomer = await polarClient.customers.create({
       email,
-      name: name || email.split('@')[0], // Use name or fallback to email prefix
+      name: name || email.split('@')[0],
     });
 
     return newCustomer;
