@@ -64,7 +64,6 @@ export function SignupForm({
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.message || 'Sign up failed');
       }
-      // Don't redirect immediately - show verification message
       setUserEmail(values.email);
       setIsEmailSent(true);
     } catch (err: unknown) {
@@ -82,7 +81,6 @@ export function SignupForm({
 
     try {
       await authClient.sendVerificationEmail({ email: userEmail });
-      // Show success message briefly
     } catch (err: any) {
       setResendError(err?.message || 'Failed to send verification email');
     } finally {

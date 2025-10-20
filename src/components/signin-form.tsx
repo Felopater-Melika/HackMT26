@@ -52,9 +52,7 @@ export function SigninForm({
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
 
-        // Better Auth returns 403 when email is not verified
         if (res.status === 403) {
-          // Show verification UI
           setVerificationEmail(values.email);
           setShowVerification(true);
           return;
@@ -63,7 +61,6 @@ export function SigninForm({
         throw new Error(data?.message || 'Sign in failed');
       }
 
-      // Sign in successful and email verified
       router.push('/app');
     } catch (err: unknown) {
       setError('password', {
@@ -80,7 +77,6 @@ export function SigninForm({
 
     try {
       await authClient.sendVerificationEmail({ email: verificationEmail });
-      // Success - maybe show a toast or message
     } catch (err: any) {
       setResendError(err?.message || 'Failed to send verification email');
     } finally {

@@ -1,7 +1,19 @@
-export default async function Home() {
-  return (
-    <div className='p-8'>
-      <h1 className='text-2xl font-bold mb-4'>Cliniq Care</h1>
-    </div>
-  );
+import { api } from '@/trpc/server';
+import { OnboardingWrapper } from '@/components/onboarding-wrapper';
+import { Dashboard } from '@/components/dashboard';
+import { redirect } from 'next/navigation';
+
+export default async function AppPage() {
+  try {
+    const onboardingStatus = await api.profile.getOnboardingStatus();
+
+    if (!onboardingStatus.isOnboarded) {
+      return <OnboardingWrapper />;
+    }
+
+    return <Dashboard profile={onboardingStatus.profile!} />;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    redirect('/signin');
+  }
 }
