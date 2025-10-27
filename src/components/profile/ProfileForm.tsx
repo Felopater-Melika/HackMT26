@@ -1,6 +1,6 @@
 "use client";
 
-import { ConditionsSelector } from "@/components/conditions-selector";
+import { ConditionsSelector } from "@/components/ConditionsSelector";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -93,7 +93,7 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 				gender: profile.gender || "",
 				conditionIds: userConditions.map((c) => c.id),
 			};
-			console.log("Setting form data:", formData); // Debug log
+			console.log("Setting form data:", formData);
 			form.reset(formData);
 			setSelectedConditions(userConditions.map((c) => c.id));
 		}
@@ -177,14 +177,11 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 					control={form.control}
 					name="gender"
 					render={({ field }) => {
-						console.log("Gender field value:", field.value); // Debug log
+						console.log("Gender field value:", field.value);
 						return (
 							<FormItem>
 								<FormLabel>Gender</FormLabel>
-								<Select
-									onValueChange={field.onChange}
-									value={field.value}
-								>
+								<Select onValueChange={field.onChange} value={field.value}>
 									<FormControl>
 										<SelectTrigger>
 											<SelectValue placeholder="Select your gender" />

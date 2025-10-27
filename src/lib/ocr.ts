@@ -1,5 +1,5 @@
 import { env } from "@/env";
-import type { OcrConfig } from "@/types/ocr";
+import type { OcrConfig } from "@/types/Ocr";
 
 export function createOcrConfig(overrides?: Partial<OcrConfig>): OcrConfig {
 	return {

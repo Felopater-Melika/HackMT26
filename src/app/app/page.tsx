@@ -1,5 +1,5 @@
-import { Dashboard } from "@/components/dashboard";
-import { OnboardingWrapper } from "@/components/profile/onboarding-wrapper";
+import { Dashboard } from "@/components/Dashboard";
+import { OnboardingWrapper } from "@/components/profile/OnboardingWrapper";
 import { api } from "@/trpc/server";
 import { redirect } from "next/navigation";
 
