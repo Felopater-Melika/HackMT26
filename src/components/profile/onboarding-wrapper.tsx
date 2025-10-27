@@ -1,7 +1,7 @@
 'use client';
 
 import {useRouter} from 'next/navigation';
-import {OnboardingForm} from '@/components/onboarding-form';
+import {OnboardingForm} from '@/components/profile/onboarding-form';
 
 export function OnboardingWrapper() {
     const router = useRouter();

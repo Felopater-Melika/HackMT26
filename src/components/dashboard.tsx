@@ -1,38 +1,68 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import {Button} from '@/components/ui/button';
-import {api} from '@/trpc/react';
+import { ProfileForm } from "@/components/profile/profile-form";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { api } from "@/trpc/react";
+import { useState } from "react";
 
 interface DashboardProps {
-    profile: {
-        id: string;
-        age: number | null;
-        gender: string | null;
-        createdAt: Date | null;
-    };
+	profile: {
+		id: string;
+		age: number | null;
+		gender: string | null;
+		createdAt: Date | null;
+	};
 }
 
-export function Dashboard({profile}: DashboardProps) {
-    const {data: userConditions = []} =
-        api.conditions.getUserConditions.useQuery();
+export function Dashboard({ profile }: DashboardProps) {
+	const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+	const { data: userConditions = [] } =
+		api.conditions.getUserConditions.useQuery();
 
-    return (
-        <div className='min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8'>
-            <div className='max-w-7xl mx-auto'>
-                <div className='mb-8 flex justify-between items-center'>
-                    <div>
-                        <h1 className='text-3xl font-bold text-gray-900'>
-                            Welcome back to Cliniq Care
-                        </h1>
-                    </div>
-                    <Link href='/app/profile'>
-                        <Button variant='outline'>Edit Profile</Button>
-                    </Link>
-                </div>
+	const utils = api.useUtils();
 
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'></div>
-            </div>
-        </div>
-    );
+	const handleProfileUpdateSuccess = () => {
+		setIsProfileModalOpen(false);
+		utils.profile.getProfile.invalidate();
+		utils.conditions.getUserConditions.invalidate();
+	};
+
+	return (
+		<div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
+			<div className="mx-auto max-w-7xl">
+				<div className="mb-8 flex items-center justify-between">
+					<div>
+						<h1 className="font-bold text-3xl text-gray-900">
+							Welcome back to Cliniq Care
+						</h1>
+					</div>
+					<Button variant="outline" onClick={() => setIsProfileModalOpen(true)}>
+						Edit Profile
+					</Button>
+				</div>
+
+				<Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
+					<DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>Edit Profile</DialogTitle>
+							<DialogDescription>
+								Update your personal information and medical conditions
+							</DialogDescription>
+						</DialogHeader>
+						<ProfileForm
+							variant="modal"
+							onSuccess={handleProfileUpdateSuccess}
+						/>
+					</DialogContent>
+				</Dialog>
+			</div>
+		</div>
+	);
 }
