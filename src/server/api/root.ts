@@ -1,6 +1,6 @@
-import { createCallerFactory, createTRPCRouter } from '@/server/api/trpc';
-import { profileRouter } from './routers/profile';
-import { conditionsRouter } from './routers/conditions';
+import {createCallerFactory, createTRPCRouter} from '@/server/api/trpc';
+import {profileRouter} from './routers/profile';
+import {conditionsRouter} from './routers/conditions';
 
 /**
  * This is the primary router for your server.
@@ -8,8 +8,8 @@ import { conditionsRouter } from './routers/conditions';
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  profile: profileRouter,
-  conditions: conditionsRouter,
+    profile: profileRouter,
+    conditions: conditionsRouter,
 });
 
 // export type definition of API
