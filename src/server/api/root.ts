@@ -1,8 +1,8 @@
 import { ocrRouter } from "@/server/api/routers/ocr";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { conditionsRouter } from "./routers/conditions";
-import { profileRouter } from "./routers/profile";
 import { medicationsRouter } from "./routers/medications";
+import { profileRouter } from "./routers/profile";
 
 /**
  * This is the primary router for your server.

@@ -84,7 +84,9 @@ export function Dashboard() {
 		if (allSelected) setSelected({});
 		else {
 			const all: Record<string, boolean> = {};
-			rows.forEach((r) => (all[r.id] = true));
+			for (const r of rows) {
+				all[r.id] = true;
+			}
 			setSelected(all);
 		}
 	};
@@ -144,7 +146,7 @@ export function Dashboard() {
 				setFiles((prev) => [...prev, ...filtered]);
 			}
 		},
-		[setFiles],
+		[],
 	);
 
 	const handleFileUpload = useCallback(
@@ -158,7 +160,7 @@ export function Dashboard() {
 	);
 
 	const handleDrop = useCallback(
-		(e: React.DragEvent<HTMLDivElement>) => {
+		(e: React.DragEvent<HTMLButtonElement>) => {
 			e.preventDefault();
 			if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
 				onFilesAdded(e.dataTransfer.files);
@@ -168,7 +170,7 @@ export function Dashboard() {
 		[onFilesAdded],
 	);
 
-	const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+	const handleDragOver = useCallback((e: React.DragEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 	}, []);
 
@@ -200,7 +202,7 @@ export function Dashboard() {
 			// Assuming response.medications is array of { name: string, dosage: number, measurement: string }
 			if (response?.medications && Array.isArray(response.medications)) {
 				const parsedRows: MedicationEntry[] = response.medications.map(
-					(med: any, index: number) => ({
+					(med) => ({
 						id: crypto.randomUUID(),
 						name: med.name ?? "",
 						dosage: med.dosage ?? 0,
@@ -219,8 +221,6 @@ export function Dashboard() {
 		}
 	};
 
-	const responseRef = useRef<{ images: Array<{ filename?: string; lines: string[] }> } | null>(null);
-
 	const handleAnalyzeMedications = async () => {
 		try {
 			await medsAnalyzeMutation.mutateAsync({
@@ -230,7 +230,6 @@ export function Dashboard() {
 					measurement: r.measurement,
 					ocrLines: r.ocrLines ?? [],
 				})),
-				images: (typeof responseRef !== "undefined" && responseRef?.current?.images) ? responseRef.current.images : [],
 			});
 		} catch (error) {
 			console.error("Medication analysis request failed:", error);
@@ -262,36 +261,39 @@ export function Dashboard() {
 			accessorKey: "name",
 			header: "Medication",
 			cell: ({ row }) => (
-				<div
-					className="max-w-[150px] cursor-pointer truncate hover:text-blue-600"
+				<button
+					type="button"
+					className="max-w-[150px] cursor-pointer truncate text-left hover:text-blue-600"
 					onClick={() => handleRowClick(row.original)}
 				>
 					{row.original.name}
-				</div>
+				</button>
 			),
 		},
 		{
 			accessorKey: "dosage",
 			header: () => <div className="pr-2 text-right">Dosage</div>,
 			cell: ({ row }) => (
-				<div
-					className="cursor-pointer pr-2 text-right hover:text-blue-600"
+				<button
+					type="button"
+					className="w-full cursor-pointer pr-2 text-right hover:text-blue-600"
 					onClick={() => handleRowClick(row.original)}
 				>
 					{row.original.dosage}
-				</div>
+				</button>
 			),
 		},
 		{
 			accessorKey: "measurement",
 			header: () => <div className="pr-2 text-right">Unit</div>,
 			cell: ({ row }) => (
-				<div
-					className="cursor-pointer pr-2 text-right capitalize hover:text-blue-600"
+				<button
+					type="button"
+					className="w-full cursor-pointer pr-2 text-right capitalize hover:text-blue-600"
 					onClick={() => handleRowClick(row.original)}
 				>
 					{row.original.measurement}
-				</div>
+				</button>
 			),
 		},
 		{
@@ -353,14 +355,15 @@ export function Dashboard() {
 					<div className="flex flex-wrap items-center gap-4">
 						<Button onClick={handleAdd}>+ Add Medication</Button>
 
-						{/* New Drag and Drop Upload Area */}
-						<div
-							onDrop={handleDrop}
-							onDragOver={handleDragOver}
-							onClick={() => fileInputRef.current?.click()}
-							className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-gray-300 border-dashed bg-white p-4 text-center text-gray-600 transition hover:bg-gray-50"
-							aria-label="File Upload Dropzone"
-						>
+					{/* New Drag and Drop Upload Area */}
+					<button
+						onDrop={handleDrop}
+						onDragOver={handleDragOver}
+						onClick={() => fileInputRef.current?.click()}
+						className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-gray-300 border-dashed bg-white p-4 text-center text-gray-600 transition hover:bg-gray-50"
+						aria-label="File Upload Dropzone"
+						type="button"
+					>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								fill="none"
@@ -368,6 +371,8 @@ export function Dashboard() {
 								strokeWidth={1.5}
 								stroke="currentColor"
 								className="mb-2 h-8 w-8"
+								role="img"
+								aria-label="Upload icon"
 							>
 								<path
 									strokeLinecap="round"
@@ -386,14 +391,16 @@ export function Dashboard() {
 								onChange={handleFileUpload}
 								className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
 							/>
-						</div>
+						</button>
 
 						<Button
 							variant="secondary"
 							onClick={handleAnalyzeMedications}
 							disabled={rows.length === 0 || medsAnalyzeMutation.isPending}
 						>
-							{medsAnalyzeMutation.isPending ? "Sending..." : "Analyze Medications"}
+							{medsAnalyzeMutation.isPending
+								? "Sending..."
+								: "Analyze Medications"}
 						</Button>
 
 						<Button
@@ -435,6 +442,8 @@ export function Dashboard() {
 													strokeWidth={1.5}
 													stroke="currentColor"
 													className="mb-1 h-8 w-8"
+													role="img"
+													aria-label="PDF file"
 												>
 													<path
 														strokeLinecap="round"

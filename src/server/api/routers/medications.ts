@@ -16,9 +16,10 @@ export const medicationsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input }) => {
-			console.log("[medications.analyze] received:", JSON.stringify(input, null, 2));
+			console.log(
+				"[medications.analyze] received:",
+				JSON.stringify(input, null, 2),
+			);
 			return { ok: true };
 		}),
 });
-
-

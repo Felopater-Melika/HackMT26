@@ -1,9 +1,9 @@
 import { MeasurementUnit } from "@/enums/Medications";
+import { env } from "@/env.js";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import type { OcrConfig } from "@/types/Ocr";
 import { searchByDrugName } from "@/utils/api/rxnav";
 import { analyzeBatchOcr } from "@/utils/ocr";
-import { env } from "@/env.js";
 import { z } from "zod";
 
 // Normalize OCR text lines for cleaner parsing
@@ -69,9 +69,11 @@ export const ocrRouter = createTRPCRouter({
 
 			// Step 4: Detect dosages + units
 			// Sort units by length (longest first) to avoid partial matches of shorter units
-			const sortedUnits = Object.values(MeasurementUnit).sort((a, b) => b.length - a.length);
+			const sortedUnits = Object.values(MeasurementUnit).sort(
+				(a, b) => b.length - a.length,
+			);
 			const unitPattern = sortedUnits.join("|");
-			
+
 			// Match patterns like: "500mg", "500 mg", "0.5mg", "1/2 tablet", "1-2 capsules"
 			const dosageRegex = new RegExp(
 				`(\\d+(?:\\.\\d+)?(?:/\\d+)?)\\s*(${unitPattern})(?:s)?(?:\\s|$|,|;|:|\\.)`,
@@ -80,27 +82,30 @@ export const ocrRouter = createTRPCRouter({
 
 			const dosageData = texts.flatMap((line) => {
 				const matches = [...line.matchAll(dosageRegex)];
-				return matches.map((m) => {
-					const valueStr = m[1];
-					const unitStr = m[2];
-					if (!valueStr || !unitStr) return null;
-					
-					// Parse fractional dosages like "1/2" to 0.5
-					let value: number;
-					if (valueStr.includes("/")) {
-						const [numerator, denominator] = valueStr.split("/");
-						if (!numerator || !denominator) return null;
-						value = Number.parseFloat(numerator) / Number.parseFloat(denominator);
-					} else {
-						value = Number.parseFloat(valueStr);
-					}
-					
-					return {
-						value,
-						unit: unitStr.toLowerCase() as MeasurementUnit,
-						context: line,
-					};
-				}).filter((item): item is Exclude<typeof item, null> => item !== null);
+				return matches
+					.map((m) => {
+						const valueStr = m[1];
+						const unitStr = m[2];
+						if (!valueStr || !unitStr) return null;
+
+						// Parse fractional dosages like "1/2" to 0.5
+						let value: number;
+						if (valueStr.includes("/")) {
+							const [numerator, denominator] = valueStr.split("/");
+							if (!numerator || !denominator) return null;
+							value =
+								Number.parseFloat(numerator) / Number.parseFloat(denominator);
+						} else {
+							value = Number.parseFloat(valueStr);
+						}
+
+						return {
+							value,
+							unit: unitStr.toLowerCase() as MeasurementUnit,
+							context: line,
+						};
+					})
+					.filter((item): item is Exclude<typeof item, null> => item !== null);
 			});
 
 			// Step 5: Query RxNav for each candidate
@@ -122,15 +127,16 @@ export const ocrRouter = createTRPCRouter({
 			for (const res of lookups) {
 				if (res.status === "fulfilled" && res.value.results.length > 0) {
 					const drugName = res.value.drug;
-					
+
 					// First, try to find dosages mentioned on the same line as the drug name
 					const matchedDosages = dosageData.filter((d) =>
 						d.context.includes(drugName.toLowerCase()),
 					);
-					
+
 					// If no dosages found on same line, use any dosages from the document
 					// (common in OCR where drug name and dosage might be on different lines)
-					const dosagesToUse = matchedDosages.length > 0 ? matchedDosages : dosageData;
+					const dosagesToUse =
+						matchedDosages.length > 0 ? matchedDosages : dosageData;
 
 					// Get ALL OCR lines from images that mention this drug name
 					const relatedOcrLines = ocrResults.flatMap((result) => {
@@ -138,7 +144,7 @@ export const ocrRouter = createTRPCRouter({
 						const imageContainsDrug = result.lines.some((line) =>
 							normalizeText(line.text).includes(drugName.toLowerCase()),
 						);
-						
+
 						// If drug found in this image, return ALL lines from this image
 						if (imageContainsDrug) {
 							return result.lines.map((line) => line.text);
