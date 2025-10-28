@@ -134,20 +134,17 @@ export function Dashboard() {
 	// New drag-and-drop uploader handlers and component
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-	const onFilesAdded = useCallback(
-		(newFiles: FileList | File[]) => {
-			const uploaded = Array.from(newFiles);
-			// Filter to only images or PDFs
-			const filtered = uploaded.filter((file) => {
-				const type = file.type.toLowerCase();
-				return type.startsWith("image/") || type === "application/pdf";
-			});
-			if (filtered.length > 0) {
-				setFiles((prev) => [...prev, ...filtered]);
-			}
-		},
-		[],
-	);
+	const onFilesAdded = useCallback((newFiles: FileList | File[]) => {
+		const uploaded = Array.from(newFiles);
+		// Filter to only images or PDFs
+		const filtered = uploaded.filter((file) => {
+			const type = file.type.toLowerCase();
+			return type.startsWith("image/") || type === "application/pdf";
+		});
+		if (filtered.length > 0) {
+			setFiles((prev) => [...prev, ...filtered]);
+		}
+	}, []);
 
 	const handleFileUpload = useCallback(
 		(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -170,9 +167,12 @@ export function Dashboard() {
 		[onFilesAdded],
 	);
 
-	const handleDragOver = useCallback((e: React.DragEvent<HTMLButtonElement>) => {
-		e.preventDefault();
-	}, []);
+	const handleDragOver = useCallback(
+		(e: React.DragEvent<HTMLButtonElement>) => {
+			e.preventDefault();
+		},
+		[],
+	);
 
 	const removeFile = (name: string) =>
 		setFiles((prev) => prev.filter((f) => f.name !== name));
@@ -355,15 +355,15 @@ export function Dashboard() {
 					<div className="flex flex-wrap items-center gap-4">
 						<Button onClick={handleAdd}>+ Add Medication</Button>
 
-					{/* New Drag and Drop Upload Area */}
-					<button
-						onDrop={handleDrop}
-						onDragOver={handleDragOver}
-						onClick={() => fileInputRef.current?.click()}
-						className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-gray-300 border-dashed bg-white p-4 text-center text-gray-600 transition hover:bg-gray-50"
-						aria-label="File Upload Dropzone"
-						type="button"
-					>
+						{/* New Drag and Drop Upload Area */}
+						<button
+							onDrop={handleDrop}
+							onDragOver={handleDragOver}
+							onClick={() => fileInputRef.current?.click()}
+							className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-gray-300 border-dashed bg-white p-4 text-center text-gray-600 transition hover:bg-gray-50"
+							aria-label="File Upload Dropzone"
+							type="button"
+						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								fill="none"
