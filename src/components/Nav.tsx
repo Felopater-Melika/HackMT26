@@ -1,0 +1,103 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { LogOut, Scan, LayoutDashboard, User } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export function Nav() {
+	const router = useRouter();
+	const pathname = usePathname();
+
+	const handleSignOut = async () => {
+		try {
+			// Call the sign-out endpoint
+			await fetch("/api/auth/sign-out", {
+				method: "POST",
+			});
+			// Redirect to sign in page
+			window.location.href = "/app/signin";
+		} catch (error) {
+			console.error("Sign out failed:", error);
+			// Still redirect even if there's an error
+			window.location.href = "/app/signin";
+		}
+	};
+
+	const navItems = [
+		{ href: "/app/scan", label: "Scan", icon: Scan },
+		{ href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
+		{ href: "/app/profile", label: "Profile", icon: User },
+	];
+
+	return (
+		<nav className="border-b bg-white">
+			<div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+				<div className="flex items-center gap-6">
+					<Link
+						href="/app"
+						className="font-bold text-lg text-gray-900 hover:text-gray-700"
+					>
+						Cliniq
+					</Link>
+					<div className="hidden items-center gap-1 sm:flex">
+						{navItems.map((item) => {
+							const Icon = item.icon;
+							const isActive = pathname === item.href;
+							return (
+								<Link
+									key={item.href}
+									href={item.href}
+									className={cn(
+										"flex items-center gap-2 rounded-md px-3 py-2 font-medium text-sm transition-colors",
+										isActive
+											? "bg-gray-100 text-gray-900"
+											: "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+									)}
+								>
+									<Icon className="h-4 w-4" />
+									{item.label}
+								</Link>
+							);
+						})}
+					</div>
+				</div>
+				<Button
+					variant="ghost"
+					onClick={handleSignOut}
+					className="flex items-center gap-2"
+				>
+					<LogOut className="h-4 w-4" />
+					<span className="hidden sm:inline">Sign Out</span>
+				</Button>
+			</div>
+			{/* Mobile menu */}
+			<div className="border-t sm:hidden">
+				<div className="flex items-center justify-around px-4 py-2">
+					{navItems.map((item) => {
+						const Icon = item.icon;
+						const isActive = pathname === item.href;
+						return (
+							<Link
+								key={item.href}
+								href={item.href}
+								className={cn(
+									"flex flex-col items-center gap-1 rounded-md px-3 py-2 text-xs transition-colors",
+									isActive
+										? "text-gray-900"
+										: "text-gray-600 hover:text-gray-900",
+								)}
+							>
+								<Icon className="h-5 w-5" />
+								{item.label}
+							</Link>
+						);
+					})}
+				</div>
+			</div>
+		</nav>
+	);
+}
+
