@@ -4,7 +4,9 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { PostHogProvider } from "@/components/PostHogProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { TRPCReactProvider } from "@/trpc/react";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
 	title: "Create T3 App",
@@ -25,13 +27,16 @@ export default function RootLayout({
 	return (
 		<html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
 			<body>
-				{isProduction ? (
-					<PostHogProvider>
+				<ThemeProvider defaultTheme="system" storageKey="cliniq-theme">
+					{isProduction ? (
+						<PostHogProvider>
+							<TRPCReactProvider>{children}</TRPCReactProvider>
+						</PostHogProvider>
+					) : (
 						<TRPCReactProvider>{children}</TRPCReactProvider>
-					</PostHogProvider>
-				) : (
-					<TRPCReactProvider>{children}</TRPCReactProvider>
-				)}
+					)}
+					<Toaster richColors position="top-center" />
+				</ThemeProvider>
 			</body>
 		</html>
 	);

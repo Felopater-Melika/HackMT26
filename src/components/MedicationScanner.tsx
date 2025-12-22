@@ -27,6 +27,8 @@ import {
 } from "@tanstack/react-table";
 import { Upload, Trash2, Scan, Plus, FileText } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 enum MeasurementUnit {
 	Mg = "mg",
@@ -78,6 +80,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 	const [loading, setLoading] = useState(false);
 	const [isInitialized, setIsInitialized] = useState(false);
 
+	const router = useRouter();
 	const ocrMutation = api.ocr.analyzeImages.useMutation();
 	const medsAnalyzeMutation = api.medications.analyze.useMutation();
 
@@ -255,9 +258,22 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 		}
 	};
 
+	const handleClearStorage = () => {
+		if (confirm("Clear all scanned medications? This cannot be undone.")) {
+			localStorage.removeItem(STORAGE_KEY);
+			setRows([]);
+			setSelected({});
+			console.log("✅ Local storage cleared");
+		}
+	};
+
 	const handleAnalyzeMedications = async () => {
 		try {
-			await medsAnalyzeMutation.mutateAsync({
+			console.log("🚀 Starting medication analysis...");
+			
+			toast.loading("Analyzing medications...", { id: "analysis" });
+			
+			const result = await medsAnalyzeMutation.mutateAsync({
 				medications: rows.map((r) => ({
 					name: r.name,
 					dosage: r.dosage,
@@ -265,8 +281,58 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 					ocrLines: r.ocrLines ?? [],
 				})),
 			});
+			
+			console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+			console.log("🎉 ANALYSIS COMPLETE - Frontend Results:");
+			console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+			console.log("\n📊 Summary:");
+			console.log("  Total Medications:", result.summary.totalMedications);
+			console.log("  Successfully Analyzed:", result.summary.analyzedSuccessfully);
+			console.log("  Average Safety Score:", result.summary.averageSafetyScore, "/100");
+			console.log("  Requires Attention:", result.summary.requiresAttention ? "⚠️ YES" : "✅ No");
+			
+			console.log("\n💊 Individual Results:");
+			result.individualResults.forEach((med: any, i: number) => {
+				console.log(`\n${i + 1}. ${med.medicationName}`);
+				if (med.success) {
+					console.log(`   Safety Score: ${med.safetyScore}/100`);
+					console.log(`   Warnings: ${med.warnings.length}`);
+					console.log(`   Interactions: ${med.interactions.length}`);
+					console.log(`   Recommendations: ${med.recommendations.length}`);
+				} else {
+					console.log(`   ❌ Error: ${med.error}`);
+				}
+			});
+			
+			if (result.interactionAnalysis) {
+				console.log("\n🔗 Drug Interaction Analysis:");
+				console.log("   Medications:", result.interactionAnalysis.medications.join(", "));
+				console.log("   Interactions Found:", result.interactionAnalysis.interactions.length);
+				console.log("   Recommendations:", result.interactionAnalysis.recommendations.length);
+			}
+			console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+			
+			// Clear storage after successful analysis
+			localStorage.removeItem(STORAGE_KEY);
+			setRows([]);
+			setSelected({});
+			
+			console.log("✅ Local storage cleared after successful analysis");
+			
+			// Show success toast
+			toast.success("Analysis complete!", { 
+				id: "analysis",
+				description: `Analyzed ${result.summary.analyzedSuccessfully} medication(s)`,
+			});
+			
+			// Redirect to dashboard
+			router.push("/app/dashboard");
 		} catch (error) {
-			console.error("Medication analysis request failed:", error);
+			console.error("❌ Medication analysis request failed:", error);
+			toast.error("Analysis failed", { 
+				id: "analysis",
+				description: "Please try again or check console for details",
+			});
 		}
 	};
 
@@ -297,7 +363,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 			cell: ({ row }) => (
 				<button
 					type="button"
-					className="max-w-[200px] cursor-pointer truncate text-left font-medium hover:text-blue-600"
+					className="max-w-[200px] cursor-pointer truncate text-left font-medium hover:text-primary"
 					onClick={() => handleRowClick(row.original)}
 				>
 					{row.original.name || "Unnamed medication"}
@@ -310,7 +376,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 			cell: ({ row }) => (
 				<button
 					type="button"
-					className="w-full cursor-pointer text-right hover:text-blue-600"
+					className="w-full cursor-pointer text-right hover:text-primary"
 					onClick={() => handleRowClick(row.original)}
 				>
 					{row.original.dosage ?? "-"}
@@ -323,7 +389,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 			cell: ({ row }) => (
 				<button
 					type="button"
-					className="w-full cursor-pointer text-right capitalize hover:text-blue-600"
+					className="w-full cursor-pointer text-right capitalize hover:text-primary"
 					onClick={() => handleRowClick(row.original)}
 				>
 					{row.original.measurement ?? "-"}
@@ -347,8 +413,8 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 						<Trash2
 							className={`h-4 w-4 ${
 								Object.values(selected).some((v) => v)
-									? "text-red-500"
-									: "text-gray-400"
+									? "text-destructive"
+									: "text-muted-foreground"
 							}`}
 						/>
 					</Button>
@@ -379,10 +445,10 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 		<div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
 			{/* Header */}
 			<div className="mb-8">
-				<h1 className="mb-2 font-bold text-3xl text-gray-900">
+				<h1 className="mb-2 font-bold text-3xl text-foreground">
 					Scan Medications
 				</h1>
-				<p className="text-gray-600">
+				<p className="text-muted-foreground">
 					Upload images or PDFs of your medications to extract information
 					automatically
 				</p>
@@ -390,13 +456,13 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 
 			<div className="space-y-6">
 				{/* Upload Section */}
-				<div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+				<div className="rounded-lg border bg-card p-6 shadow-sm">
 					<div className="mb-4 flex items-center justify-between">
-						<h2 className="font-semibold text-lg text-gray-900">
+						<h2 className="font-semibold text-lg text-foreground">
 							Upload Files
 						</h2>
 						<Button
-							variant="outline"
+							variant="default"
 							size="sm"
 							onClick={handleAdd}
 							className="gap-2"
@@ -409,15 +475,15 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 					<div
   onDrop={handleDrop}
   onDragOver={handleDragOver}
-  className="group relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-12 hover:border-blue-400 hover:bg-blue-50/50"
+  className="group relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted p-12 hover:border-primary hover:bg-accent/50"
 >
-  <Upload className="mb-4 h-12 w-12 text-gray-400 group-hover:text-blue-500" />
+  <Upload className="mb-4 h-12 w-12 text-muted-foreground group-hover:text-primary" />
 
   <div className="text-center pointer-events-none">
-    <p className="mb-1 font-medium text-gray-900">
+    <p className="mb-1 font-medium text-foreground">
       Drag and drop files here
     </p>
-    <p className="text-sm text-gray-500">
+    <p className="text-sm text-muted-foreground">
       or click to browse (images or PDFs)
     </p>
   </div>
@@ -435,7 +501,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 					{files.length > 0 && (
 						<div className="mt-6">
 							<div className="mb-3 flex items-center justify-between">
-								<p className="font-medium text-sm text-gray-700">
+								<p className="font-medium text-sm text-foreground">
 									{files.length} file{files.length !== 1 ? "s" : ""} ready
 									to scan
 								</p>
@@ -468,8 +534,8 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 										);
 									} else if (isPDF) {
 										preview = (
-											<div className="flex h-20 w-20 flex-col items-center justify-center rounded-md border border-gray-300 bg-gray-100">
-												<FileText className="mb-1 h-8 w-8 text-gray-600" />
+											<div className="flex h-20 w-20 flex-col items-center justify-center rounded-md border bg-muted">
+												<FileText className="mb-1 h-8 w-8 text-muted-foreground" />
 											</div>
 										);
 									}
@@ -477,7 +543,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 									return (
 										<div
 											key={file.name + file.size}
-											className="group relative rounded-md border border-gray-200 bg-white p-1 shadow-sm"
+											className="group relative rounded-md border bg-card p-1 shadow-sm"
 										>
 											{preview}
 											<button
@@ -491,7 +557,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 											>
 												×
 											</button>
-											<p className="mt-1 max-w-[80px] truncate text-xs text-gray-600">
+											<p className="mt-1 max-w-[80px] truncate text-xs text-muted-foreground">
 												{file.name}
 											</p>
 										</div>
@@ -504,24 +570,36 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 
 				{/* Medications Table */}
 				{rows.length > 0 && (
-					<div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-						<div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
+					<div className="rounded-lg border bg-card shadow-sm">
+						<div className="border-b bg-muted px-6 py-4">
 							<div className="flex items-center justify-between">
-								<h2 className="font-semibold text-lg text-gray-900">
+								<h2 className="font-semibold text-lg text-foreground">
 									Scanned Medications ({rows.length})
 								</h2>
-								<Button
-									variant="default"
-									size="sm"
-									onClick={handleAnalyzeMedications}
-									disabled={medsAnalyzeMutation.isPending}
-									className="gap-2"
-								>
-									<Scan className="h-4 w-4" />
-									{medsAnalyzeMutation.isPending
-										? "Analyzing..."
-										: "Analyze All"}
-								</Button>
+								<div className="flex gap-2">
+									<Button
+										variant="destructive"
+										size="sm"
+										onClick={handleClearStorage}
+										disabled={rows.length === 0}
+										className="gap-2"
+									>
+										<Trash2 className="h-4 w-4" />
+										Clear All
+									</Button>
+									<Button
+										variant="default"
+										size="sm"
+										onClick={handleAnalyzeMedications}
+										disabled={medsAnalyzeMutation.isPending}
+										className="gap-2"
+									>
+										<Scan className="h-4 w-4" />
+										{medsAnalyzeMutation.isPending
+											? "Analyzing..."
+											: "Analyze All"}
+									</Button>
+								</div>
 							</div>
 						</div>
 						<div className="overflow-x-auto">
@@ -532,7 +610,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 											{headerGroup.headers.map((header) => (
 												<TableHead
 													key={header.id}
-													className="font-semibold text-xs text-gray-700"
+													className="font-semibold text-xs text-foreground"
 												>
 													{flexRender(
 														header.column.columnDef.header,
@@ -550,8 +628,8 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 												key={row.id}
 												className={`transition-colors ${
 													selected[row.original.id]
-														? "bg-blue-50"
-														: "bg-white hover:bg-gray-50"
+														? "bg-accent"
+														: "hover:bg-muted/50"
 												}`}
 											>
 												{row.getVisibleCells().map((cell) => (
@@ -568,7 +646,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 										<TableRow>
 											<TableCell
 												colSpan={columns.length}
-												className="h-32 text-center text-gray-500"
+												className="h-32 text-center text-muted-foreground"
 											>
 												No medications found.
 											</TableCell>
@@ -582,12 +660,12 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 
 				{/* Empty State */}
 				{rows.length === 0 && files.length === 0 && (
-					<div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-						<Scan className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-						<h3 className="mb-2 font-semibold text-lg text-gray-900">
+					<div className="rounded-lg border bg-card p-12 text-center">
+						<Scan className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+						<h3 className="mb-2 font-semibold text-lg text-foreground">
 							No medications scanned yet
 						</h3>
-						<p className="text-gray-600">
+						<p className="text-muted-foreground">
 							Upload images or PDFs of your medications to get started
 						</p>
 					</div>
@@ -609,7 +687,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 					</DialogHeader>
 					<div className="mt-4 space-y-4">
 						<div>
-							<label className="mb-2 block text-sm font-medium text-gray-700">
+							<label className="mb-2 block text-sm font-medium text-foreground">
 								Medication Name
 							</label>
 							<Input
@@ -623,7 +701,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 							/>
 						</div>
 						<div>
-							<label className="mb-2 block text-sm font-medium text-gray-700">
+							<label className="mb-2 block text-sm font-medium text-foreground">
 								Dosage
 							</label>
 							<Input
@@ -640,7 +718,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 							/>
 						</div>
 						<div>
-							<label className="mb-2 block text-sm font-medium text-gray-700">
+							<label className="mb-2 block text-sm font-medium text-foreground">
 								Unit
 							</label>
 							<select
@@ -650,7 +728,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 										prev ? { ...prev, measurement: e.target.value } : null,
 									)
 								}
-								className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+								className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
 							>
 								<option value="" disabled>
 									Select unit

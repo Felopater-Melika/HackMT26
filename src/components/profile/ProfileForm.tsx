@@ -18,6 +18,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -32,6 +33,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { toast } from "sonner";
 
 const profileSchema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -60,17 +62,22 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 	const { data: userConditions = [] } =
 		api.conditions.getUserConditions.useQuery();
 
+	const utils = api.useUtils();
 	const updateProfile = api.profile.updateProfile.useMutation({
 		onSuccess: () => {
+			toast.success("Profile updated successfully!");
+			utils.profile.getProfile.invalidate();
+			utils.conditions.getUserConditions.invalidate();
+			
 			if (variant === "modal" && onSuccess) {
 				onSuccess();
-			} else {
-				// Redirect to /app after successful update
-				router.push("/app");
 			}
 		},
 		onError: (error) => {
 			console.error("Failed to update profile:", error);
+			toast.error("Failed to update profile", {
+				description: error.message,
+			});
 		},
 	});
 
@@ -117,16 +124,16 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 
 	if (profileLoading && variant === "page") {
 		return (
-			<div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
+			<div className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
 				<div className="mx-auto max-w-2xl">
 					<div className="animate-pulse">
-						<div className="mb-6 h-8 w-1/4 rounded bg-gray-200" />
-						<div className="rounded-lg bg-white p-6 shadow">
+						<div className="mb-6 h-8 w-1/4 rounded bg-muted" />
+						<div className="rounded-lg bg-card p-6 shadow border">
 							<div className="space-y-4">
-								<div className="h-4 w-1/2 rounded bg-gray-200" />
-								<div className="h-10 rounded bg-gray-200" />
-								<div className="h-4 w-1/2 rounded bg-gray-200" />
-								<div className="h-10 rounded bg-gray-200" />
+								<div className="h-4 w-1/2 rounded bg-muted" />
+								<div className="h-10 rounded bg-muted" />
+								<div className="h-4 w-1/2 rounded bg-muted" />
+								<div className="h-10 rounded bg-muted" />
 							</div>
 						</div>
 					</div>
@@ -176,46 +183,55 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 				<FormField
 					control={form.control}
 					name="gender"
-					render={({ field }) => {
-						console.log("Gender field value:", field.value);
-						return (
-							<FormItem>
-								<FormLabel>Gender</FormLabel>
-								<Select onValueChange={field.onChange} value={field.value}>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Select your gender" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										<SelectItem value="male">Male</SelectItem>
-										<SelectItem value="female">Female</SelectItem>
-										<SelectItem value="other">Other</SelectItem>
-									</SelectContent>
-								</Select>
-								<FormMessage />
-							</FormItem>
-						);
-					}}
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Gender</FormLabel>
+							<Select
+								onValueChange={field.onChange}
+								value={field.value}
+								defaultValue={field.value}
+							>
+								<FormControl>
+									<SelectTrigger>
+										<SelectValue placeholder="Select your gender" />
+									</SelectTrigger>
+								</FormControl>
+								<SelectContent>
+									<SelectItem value="male">Male</SelectItem>
+									<SelectItem value="female">Female</SelectItem>
+									<SelectItem value="other">Other</SelectItem>
+								</SelectContent>
+							</Select>
+							<FormMessage />
+						</FormItem>
+					)}
 				/>
 
 				<Separator />
 
-				<FormItem>
-					<FormLabel>Medical Conditions</FormLabel>
-					<FormControl>
-						<ConditionsSelector
-							selectedConditions={selectedConditions}
-							onSelectionChange={setSelectedConditions}
-							placeholder="Search for conditions..."
-						/>
-					</FormControl>
-					<FormMessage />
-				</FormItem>
+				<div className="space-y-2">
+					<Label>Medical Conditions</Label>
+					<ConditionsSelector
+						selectedConditions={selectedConditions}
+						onSelectionChange={setSelectedConditions}
+						placeholder="Search for conditions..."
+					/>
+				</div>
 
-				<Button type="submit" disabled={isSubmitting}>
-					{isSubmitting ? "Updating Profile..." : "Update Profile"}
-				</Button>
+				<div className="flex gap-3">
+					<Button type="submit" disabled={isSubmitting}>
+						{isSubmitting ? "Updating Profile..." : "Update Profile"}
+					</Button>
+					{variant === "page" && (
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => router.push("/app/dashboard")}
+						>
+							Cancel
+						</Button>
+					)}
+				</div>
 			</form>
 		</Form>
 	);
@@ -225,11 +241,11 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
+		<div className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
 			<div className="mx-auto max-w-2xl">
 				<div className="mb-8">
-					<h1 className="font-bold text-3xl text-gray-900">Profile Settings</h1>
-					<p className="mt-2 text-gray-600">
+					<h1 className="font-bold text-3xl text-foreground">Profile Settings</h1>
+					<p className="mt-2 text-muted-foreground">
 						Update your personal information and medical conditions
 					</p>
 				</div>

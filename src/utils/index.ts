@@ -1,13 +1,12 @@
-import type { 
-  MedicationExtract, 
-  MedicationScanConfig, 
-  MedicationScanResult, 
-  EnrichedMedicationData 
+import type {
+  MedicationExtract,
+  MedicationScanConfig,
+  MedicationScanResult,
+  EnrichedMedicationData,
 } from '../../types/medication';
 import * as openfda from '../api/openfda';
 import * as rxnav from '../api/rxnav';
 import * as upc from '../api/upc';
-import * as dailymed from '../api/dailymed';
 import { FeatureFlags, featureFlagManager } from '@/lib/feature-flags';
 
 import * as parsing from './parsing';
@@ -19,17 +18,16 @@ import * as barcode from './barcode';
 
 /**
  * Creates API client instances for external medication data services.
- * Initializes clients for OpenFDA, RxNav, UPC Lookup, and DailyMed APIs.
- * 
+ * Initializes clients for OpenFDA, RxNav, and UPC Lookup APIs.
+ *
  * @returns Object containing all API client instances
  * @example
- * const clients = createAPIClients() // returns {openfdaClient, rxnavClient, upcLookupClient, dailyMedClient}
+ * const clients = createAPIClients() // returns {openfdaClient, rxnavClient, upcLookupClient}
  */
 const createAPIClients = () => ({
   openfdaClient: openfda,
   rxnavClient: rxnav,
   upcLookupClient: upc,
-  dailyMedClient: dailymed,
 });
 
 /**
@@ -40,7 +38,7 @@ export const medicationAPI = {
   /**
    * Parses OCR text lines into structured medication extract data.
    * Extracts medication information including name, dosage, manufacturer, NDC, etc.
-   * 
+   *
    * @param lines - Array of OCR text lines to process
    * @returns Structured medication extract object
    * @example
@@ -53,7 +51,7 @@ export const medicationAPI = {
   /**
    * Scans medication image using barcode and OCR with API enrichment.
    * Processes image buffer to extract medication information and enriches with external API data.
-   * 
+   *
    * @param buffer - Image buffer to scan for medication information
    * @param config - Scanning configuration including API settings
    * @param filename - Optional filename for logging and processing
@@ -67,9 +65,9 @@ export const medicationAPI = {
     filename?: string
   ): Promise<MedicationScanResult> => {
     const apiClients = createAPIClients();
-    
+
     const barcode = await scanning.scanBarcode(buffer);
-    
+
     let extract: MedicationExtract;
     let openfda: any = null;
 
@@ -80,9 +78,12 @@ export const medicationAPI = {
         confidence: barcode.confidence,
         raw_lines: [barcode.code],
       };
-      
+
       if (config.openfda.enabled) {
-        openfda = await scanning.tryOpenFDALookup(extract, apiClients.openfdaClient);
+        openfda = await scanning.tryOpenFDALookup(
+          extract,
+          apiClients.openfdaClient
+        );
         if (openfda) {
           extract.manufacturer = openfda.manufacturer_name;
         }
@@ -90,9 +91,12 @@ export const medicationAPI = {
     } else {
       const ocrLines = await scanning.scanWithOCR(buffer, config, filename);
       extract = parsing.createMedicationExtract(ocrLines);
-      
+
       if (config.openfda.enabled) {
-        openfda = await scanning.tryOpenFDALookup(extract, apiClients.openfdaClient);
+        openfda = await scanning.tryOpenFDALookup(
+          extract,
+          apiClients.openfdaClient
+        );
       }
     }
 
@@ -115,7 +119,7 @@ export const medicationAPI = {
   /**
    * Scans multiple medication images in batch processing.
    * Processes array of files sequentially and returns results for each file.
-   * 
+   *
    * @param files - Array of file objects containing buffer data and filenames
    * @param config - Scanning configuration for all files
    * @returns Array of medication scan results, one per input file
@@ -127,19 +131,19 @@ export const medicationAPI = {
     config: MedicationScanConfig
   ): Promise<MedicationScanResult[]> => {
     const results: MedicationScanResult[] = [];
-    
+
     for (const file of files) {
       const result = await medicationAPI.scan(file.data, config, file.filename);
       results.push(result);
     }
-    
+
     return results;
   },
 
   /**
    * Enriches medication extract with comprehensive data from multiple APIs.
-   * Combines data from OpenFDA, RxNav, DailyMed, and UPC Lookup services.
-   * 
+   * Combines data from OpenFDA, RxNav, and UPC Lookup services.
+   *
    * @param extract - The medication extract to enrich
    * @param options - Optional API enable/disable flags
    * @returns Fully enriched medication data with verification and confidence scores
@@ -151,69 +155,73 @@ export const medicationAPI = {
     options: {
       enableOpenFDA?: boolean;
       enableRxNav?: boolean;
-      enableDailyMed?: boolean;
       enableUPCLookup?: boolean;
     } = {}
   ): Promise<EnrichedMedicationData> => {
     const apiClients = createAPIClients();
-    
-    const shouldUseOpenFDA = enrichment.shouldUseAPI(options.enableOpenFDA, featureFlagManager.isEnabled(FeatureFlags.ENABLE_OPENFDA));
-    const shouldUseRxNav = enrichment.shouldUseAPI(options.enableRxNav, featureFlagManager.isEnabled(FeatureFlags.ENABLE_RXNAV));
-    const shouldUseDailyMed = enrichment.shouldUseAPI(options.enableDailyMed, featureFlagManager.isEnabled(FeatureFlags.ENABLE_DAILYMED));
-    const shouldUseUPCLookup = enrichment.shouldUseAPI(options.enableUPCLookup, featureFlagManager.isEnabled(FeatureFlags.ENABLE_UPC_LOOKUP));
+
+    const shouldUseOpenFDA = enrichment.shouldUseAPI(
+      options.enableOpenFDA,
+      featureFlagManager.isEnabled(FeatureFlags.ENABLE_OPENFDA)
+    );
+    const shouldUseRxNav = enrichment.shouldUseAPI(
+      options.enableRxNav,
+      featureFlagManager.isEnabled(FeatureFlags.ENABLE_RXNAV)
+    );
+    const shouldUseUPCLookup = enrichment.shouldUseAPI(
+      options.enableUPCLookup,
+      featureFlagManager.isEnabled(FeatureFlags.ENABLE_UPC_LOOKUP)
+    );
 
     const enriched = enrichment.createInitialEnrichedData(extract);
     enrichment.addBarcodeDetection(enriched, extract);
 
     if (enrichment.isUPCFormat(extract.ndc_code || '') && shouldUseUPCLookup) {
-      const upcResult = await apiClients.upcLookupClient.lookupByUPC(extract.ndc_code!);
+      const upcResult = await apiClients.upcLookupClient.lookupByUPC(
+        extract.ndc_code!
+      );
       if (upcResult) {
         enrichment.addAPIResponse(enriched, 'upc_lookup', upcResult);
         if (upcResult.name && !enriched.name) enriched.name = upcResult.name;
-        if (upcResult.brand_name && !enriched.brand_name) enriched.brand_name = upcResult.brand_name;
-        if (upcResult.manufacturer && !enriched.manufacturer) enriched.manufacturer = upcResult.manufacturer;
+        if (upcResult.brand_name && !enriched.brand_name)
+          enriched.brand_name = upcResult.brand_name;
+        if (upcResult.manufacturer && !enriched.manufacturer)
+          enriched.manufacturer = upcResult.manufacturer;
         if (upcResult.ndc) enriched.ndc_code = upcResult.ndc;
         enrichment.updateConfidenceScore(enriched, 0.3);
       }
     }
 
     if (shouldUseOpenFDA) {
-      const openfdaResult = await scanning.tryOpenFDALookup(extract, apiClients.openfdaClient);
+      const openfdaResult = await scanning.tryOpenFDALookup(
+        extract,
+        apiClients.openfdaClient
+      );
       if (openfdaResult) {
         enrichment.mergeOpenFDAData(enriched, openfdaResult);
         enrichment.setOpenFDAVerified(enriched);
         enrichment.updateConfidenceScore(enriched, 0.3);
         enrichment.addAPIResponse(enriched, 'openfda', openfdaResult);
         enrichment.updateBarcodeLookupResult(enriched, extract, openfdaResult);
-        
+
         if (!enriched.dosage) {
-          const dosageFromOpenFDA = dosage.extractDosageFromOpenFDA(openfdaResult);
+          const dosageFromOpenFDA =
+            dosage.extractDosageFromOpenFDA(openfdaResult);
           if (dosageFromOpenFDA) enriched.dosage = dosageFromOpenFDA;
         }
       }
     }
 
     if (shouldUseRxNav && (extract.name || extract.brand_name)) {
-      const rxnavResult = await apiClients.rxnavClient.searchByDrugName(extract.name || extract.brand_name!);
+      const rxnavResult = await apiClients.rxnavClient.searchByDrugName(
+        extract.name || extract.brand_name!
+      );
       if (rxnavResult) {
         enrichment.mergeRxNavData(enriched, rxnavResult);
         enrichment.setRxNavVerified(enriched);
         enrichment.updateConfidenceScore(enriched, 0.2);
         enrichment.addAPIResponse(enriched, 'rxnav', rxnavResult);
         enrichment.updateRxNormExtraction(enriched, extract);
-      }
-    }
-
-    if (shouldUseDailyMed && (extract.name || extract.brand_name)) {
-      const searchTerm = extract.name || extract.brand_name!;
-      const dailyMedResult = await apiClients.dailyMedClient.getLatestByGeneric(searchTerm);
-      if (dailyMedResult) {
-        enrichment.addAPIResponse(enriched, 'dailymed', dailyMedResult);
-        
-        if (!enriched.dosage) {
-          const dosageFromDailyMed = dosage.extractDosageFromDailyMed(dailyMedResult);
-          if (dosageFromDailyMed) enriched.dosage = dosageFromDailyMed;
-        }
       }
     }
 
@@ -226,7 +234,10 @@ export const medicationAPI = {
     }
 
     if (!enriched.manufacturer) {
-      const manufacturerResult = await medicationAPI.lookupManufacturer(extract, enriched.api_responses?.openfda);
+      const manufacturerResult = await medicationAPI.lookupManufacturer(
+        extract,
+        enriched.api_responses?.openfda
+      );
       if (manufacturerResult) {
         enriched.manufacturer = manufacturerResult.manufacturer;
         enrichment.addManufacturerDetection(enriched, manufacturerResult);
@@ -245,14 +256,17 @@ export const medicationAPI = {
   /**
    * Looks up manufacturer information using multiple detection strategies.
    * Tries OpenFDA data, brand mapping, OCR text, NDC analysis, and generic mapping.
-   * 
+   *
    * @param extract - The medication extract to find manufacturer for
    * @param openfdaResult - Optional OpenFDA result for manufacturer lookup
    * @returns Manufacturer detection result with method and confidence details
    * @example
    * medicationAPI.lookupManufacturer(extract, openfdaResult) // returns manufacturer detection result
    */
-  lookupManufacturer: async (extract: MedicationExtract, openfdaResult?: any): Promise<any> => {
+  lookupManufacturer: async (
+    extract: MedicationExtract,
+    openfdaResult?: any
+  ): Promise<any> => {
     if (openfdaResult?.manufacturer_name) {
       return {
         manufacturer: openfdaResult.manufacturer_name,
@@ -263,7 +277,9 @@ export const medicationAPI = {
     }
 
     if (extract.brand_name || extract.name) {
-      const brandManufacturer = manufacturer.getBrandManufacturer(extract.brand_name || extract.name!);
+      const brandManufacturer = manufacturer.getBrandManufacturer(
+        extract.brand_name || extract.name!
+      );
       if (brandManufacturer) {
         return {
           manufacturer: brandManufacturer,
@@ -274,7 +290,9 @@ export const medicationAPI = {
       }
     }
 
-    const manufacturerFromText = manufacturer.findFirstManufacturer(extract.raw_lines);
+    const manufacturerFromText = manufacturer.findFirstManufacturer(
+      extract.raw_lines
+    );
     if (manufacturerFromText) {
       return {
         manufacturer: manufacturerFromText,
@@ -298,7 +316,9 @@ export const medicationAPI = {
     }
 
     if (extract.name) {
-      const manufacturerFromGeneric = manufacturer.getGenericManufacturer(extract.name);
+      const manufacturerFromGeneric = manufacturer.getGenericManufacturer(
+        extract.name
+      );
       if (manufacturerFromGeneric) {
         return {
           manufacturer: manufacturerFromGeneric,
@@ -315,7 +335,7 @@ export const medicationAPI = {
   /**
    * Generates medication purpose based on generic drug name.
    * Uses comprehensive mapping of generic names to therapeutic purposes.
-   * 
+   *
    * @param genericName - The generic drug name to generate purpose for
    * @returns Descriptive purpose string for the medication
    * @example
@@ -328,21 +348,24 @@ export const medicationAPI = {
   /**
    * Determines which required fields are missing from medication data.
    * Compares extract and OpenFDA data to identify missing essential fields.
-   * 
+   *
    * @param extract - The medication extract to validate
    * @param openfda - Optional OpenFDA result to include in validation
    * @returns Array of missing field names
    * @example
    * medicationAPI.determineRequiredFields(extract, openfdaResult) // returns ["manufacturer", "dosage"]
    */
-  determineRequiredFields: (extract: MedicationExtract, openfda?: any): string[] => {
+  determineRequiredFields: (
+    extract: MedicationExtract,
+    openfda?: any
+  ): string[] => {
     return dosage.getMissingFields(extract, openfda);
   },
 
   /**
    * Generates suggestions for medication data fields.
    * Creates suggestion arrays for names, manufacturers, and purposes.
-   * 
+   *
    * @param extract - The medication extract to generate suggestions for
    * @returns Object containing suggestion arrays for different field types
    * @example

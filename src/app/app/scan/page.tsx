@@ -18,7 +18,7 @@ export default async function ScanPage() {
 		}
 
 		return (
-			<div className="min-h-screen bg-gray-50">
+			<div className="min-h-screen bg-background">
 				<Nav />
 				<MedicationScanner profile={onboardingStatus.profile} />
 			</div>

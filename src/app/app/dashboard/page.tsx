@@ -1,19 +1,337 @@
+"use client";
+
 import { Nav } from "@/components/Nav";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+	AlertCircle,
+	Calendar,
+	ChevronDown,
+	ChevronUp,
+	Pill,
+	Plus,
+	Trash2,
+} from "lucide-react";
+import Link from "next/link";
+import { api } from "@/trpc/react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
+	const utils = api.useUtils();
+	const { data: reports, isLoading } = api.reports.getAll.useQuery();
+	const deleteReport = api.reports.delete.useMutation({
+		onSuccess: () => {
+			toast.success("Report deleted");
+			utils.reports.getAll.invalidate();
+		},
+		onError: (error) => {
+			toast.error("Failed to delete report", {
+				description: error.message,
+			});
+		},
+	});
+
+	const [expandedReports, setExpandedReports] = useState<Set<string>>(
+		new Set(),
+	);
+
+	const toggleReport = (reportId: string) => {
+		const newExpanded = new Set(expandedReports);
+		if (newExpanded.has(reportId)) {
+			newExpanded.delete(reportId);
+		} else {
+			newExpanded.add(reportId);
+		}
+		setExpandedReports(newExpanded);
+	};
+
+	const handleDelete = (
+		reportId: string,
+		e: React.MouseEvent<HTMLButtonElement>,
+	) => {
+		e.stopPropagation(); // Prevent expanding/collapsing when clicking delete
+		if (confirm("Are you sure you want to delete this report?")) {
+			deleteReport.mutate({ id: reportId });
+		}
+	};
+
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen bg-background">
 			<Nav />
 			<div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-				<div className="rounded-lg bg-white p-8 shadow-sm">
-					<h1 className="mb-4 font-bold text-3xl text-gray-900">Dashboard</h1>
-					<p className="text-gray-600">
-						This is the Dashboard page. View your medication overview and
-						statistics here.
-					</p>
+				<div className="mb-6 flex items-center justify-between">
+					<div>
+						<h1 className="font-bold text-3xl text-foreground">Dashboard</h1>
+						<p className="text-muted-foreground">
+							View your medication analysis history
+						</p>
+					</div>
+					<Link href="/app/scan">
+						<Button>
+							<Plus className="mr-2 h-4 w-4" />
+							New Scan
+						</Button>
+					</Link>
 				</div>
+
+				{isLoading ? (
+					<Card className="border p-8 text-center">
+						<p className="text-muted-foreground">Loading your reports...</p>
+					</Card>
+				) : !reports || reports.length === 0 ? (
+					<Card className="border p-8 text-center">
+						<Pill className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+						<h2 className="mb-2 font-semibold text-xl">No scans yet</h2>
+						<p className="mb-4 text-muted-foreground">
+							Start by scanning your medications to get personalized analysis
+						</p>
+						<Link href="/app/scan">
+							<Button>
+								<Plus className="mr-2 h-4 w-4" />
+								Scan Medications
+							</Button>
+						</Link>
+					</Card>
+				) : (
+					<div className="space-y-4">
+						{reports.map((report) => {
+							const analysisData = report.rawJson as any;
+							const isExpanded = expandedReports.has(report.id);
+
+							return (
+								<Card key={report.id} className="border">
+									{/* Header - Always visible */}
+									<div
+										className="flex cursor-pointer items-center justify-between p-6 hover:bg-accent/50"
+										onClick={() => toggleReport(report.id)}
+									>
+										<div className="flex-1">
+											<div className="mb-2 flex items-center gap-4">
+												<h3 className="font-semibold text-lg text-foreground">
+													{report.summary}
+												</h3>
+												{analysisData?.summary?.requiresAttention && (
+													<span className="flex items-center gap-1 rounded-full bg-destructive/10 px-3 py-1 text-destructive text-xs">
+														<AlertCircle className="h-3 w-3" />
+														Attention Required
+													</span>
+												)}
+											</div>
+											<div className="flex items-center gap-4 text-muted-foreground text-sm">
+												<span className="flex items-center gap-1">
+													<Calendar className="h-4 w-4" />
+													{new Date(
+														report.createdAt || "",
+													).toLocaleDateString()}
+												</span>
+												<span className="flex items-center gap-1">
+													<Pill className="h-4 w-4" />
+													{analysisData?.summary?.totalMedications || 0}{" "}
+													medication(s)
+												</span>
+												<span>
+													Safety Score:{" "}
+													<span className="font-semibold text-foreground">
+														{analysisData?.summary?.averageSafetyScore || 0}
+														/100
+													</span>
+												</span>
+											</div>
+										</div>
+										<div className="flex items-center gap-2">
+											<Button
+												variant="ghost"
+												size="icon"
+												onClick={(e) => handleDelete(report.id, e)}
+												disabled={deleteReport.isPending}
+												className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+											>
+												<Trash2 className="h-4 w-4" />
+											</Button>
+											<Button variant="ghost" size="icon">
+												{isExpanded ? (
+													<ChevronUp className="h-5 w-5" />
+												) : (
+													<ChevronDown className="h-5 w-5" />
+												)}
+											</Button>
+										</div>
+									</div>
+
+									{/* Expanded Content */}
+									{isExpanded && (
+										<div className="border-t p-6">
+											{/* Individual Medications */}
+											<div className="space-y-4">
+												<h4 className="font-semibold text-foreground">
+													Individual Medications
+												</h4>
+
+												{analysisData?.individualResults?.map(
+													(med: any, index: number) => (
+														<Card key={index} className="border bg-card p-4">
+															<div className="mb-3 flex items-start justify-between">
+																<div>
+																	<h5 className="font-semibold text-foreground">
+																		{med.medicationName}
+																	</h5>
+																	{med.dosage && med.measurement && (
+																		<p className="text-muted-foreground text-sm">
+																			{med.dosage} {med.measurement}
+																		</p>
+																	)}
+																</div>
+																{med.success && (
+																	<div className="text-right">
+																		<div className="font-bold text-2xl text-foreground">
+																			{med.safetyScore}
+																		</div>
+																		<div className="text-muted-foreground text-xs">
+																			Safety Score
+																		</div>
+																	</div>
+																)}
+															</div>
+
+															{med.success ? (
+																<>
+																	{med.summary && (
+																		<div className="mb-3 rounded-md bg-muted p-3">
+																			<p className="text-sm leading-relaxed">
+																				{med.summary}
+																			</p>
+																		</div>
+																	)}
+
+																	{med.warnings && med.warnings.length > 0 && (
+																		<div className="mb-3">
+																			<h6 className="mb-2 flex items-center gap-2 font-semibold text-sm">
+																				<AlertCircle className="h-4 w-4" />
+																				Warnings
+																			</h6>
+																			<ul className="space-y-1">
+																				{med.warnings.map(
+																					(warning: string, i: number) => (
+																						<li
+																							key={i}
+																							className="rounded-md border bg-card px-3 py-2 text-sm"
+																						>
+																							{warning}
+																						</li>
+																					),
+																				)}
+																			</ul>
+																		</div>
+																	)}
+
+																	{med.recommendations &&
+																		med.recommendations.length > 0 && (
+																			<div>
+																				<h6 className="mb-2 font-semibold text-sm">
+																					Recommendations
+																				</h6>
+																				<ul className="space-y-1">
+																					{med.recommendations.map(
+																						(rec: string, i: number) => (
+																							<li
+																								key={i}
+																								className="rounded-md border bg-card px-3 py-2 text-sm"
+																							>
+																								{rec}
+																							</li>
+																						),
+																					)}
+																				</ul>
+																			</div>
+																		)}
+																</>
+															) : (
+																<div className="rounded-md bg-destructive/10 p-3">
+																	<p className="font-medium text-destructive text-sm">
+																		Analysis Failed: {med.error}
+																	</p>
+																</div>
+															)}
+														</Card>
+													),
+												)}
+											</div>
+
+											{/* Drug Interaction Analysis */}
+											{analysisData?.interactionAnalysis && (
+												<Card className="mt-4 border-2 border-primary/20 bg-primary/5 p-4">
+													<h4 className="mb-3 flex items-center gap-2 font-semibold">
+														<AlertCircle className="h-5 w-5 text-primary" />
+														Drug Interaction Analysis
+													</h4>
+
+													<div className="mb-3 rounded-md bg-background p-3">
+														<p className="text-sm leading-relaxed">
+															{analysisData.interactionAnalysis.summary}
+														</p>
+													</div>
+
+													{analysisData.interactionAnalysis.interactions
+														.length > 0 && (
+														<div className="mb-3">
+															<h6 className="mb-2 font-semibold text-sm">
+																Interactions Found
+															</h6>
+															<ul className="space-y-1">
+																{analysisData.interactionAnalysis.interactions.map(
+																	(int: string, i: number) => (
+																		<li
+																			key={i}
+																			className="rounded-md border bg-card px-3 py-2 text-sm"
+																		>
+																			{int}
+																		</li>
+																	),
+																)}
+															</ul>
+														</div>
+													)}
+
+													{analysisData.interactionAnalysis.recommendations
+														.length > 0 && (
+														<div>
+															<h6 className="mb-2 font-semibold text-sm">
+																Recommendations
+															</h6>
+															<ul className="space-y-1">
+																{analysisData.interactionAnalysis.recommendations.map(
+																	(rec: string, i: number) => (
+																		<li
+																			key={i}
+																			className="rounded-md border bg-card px-3 py-2 text-sm"
+																		>
+																			{rec}
+																		</li>
+																	),
+																)}
+															</ul>
+														</div>
+													)}
+												</Card>
+											)}
+
+											{/* Disclaimer */}
+											<Card className="mt-4 border bg-muted p-3">
+												<p className="text-muted-foreground text-xs">
+													<strong>Disclaimer:</strong> This analysis is for
+													informational purposes only and does not constitute
+													medical advice.
+												</p>
+											</Card>
+										</div>
+									)}
+								</Card>
+							);
+						})}
+					</div>
+				)}
 			</div>
 		</div>
 	);
 }
-

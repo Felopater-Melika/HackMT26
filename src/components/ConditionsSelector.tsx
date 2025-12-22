@@ -151,7 +151,7 @@ export function ConditionsSelector({
 									<div className="py-6 text-center text-sm">Searching...</div>
 								) : (
 									<div className="flex flex-col items-center justify-center px-4 py-6 text-sm">
-										<p className="mb-4 text-center text-gray-600">
+										<p className="mb-4 text-center text-muted-foreground">
 											"{searchQuery}" wasn't found. Would you like to add it?
 										</p>
 										<Button
@@ -184,12 +184,12 @@ export function ConditionsSelector({
 										<div className="flex flex-col">
 											<span>{condition.name}</span>
 											{condition.description && (
-												<span className="text-gray-500 text-sm">
+												<span className="text-muted-foreground text-sm">
 													{condition.description}
 												</span>
 											)}
 											{condition.source === "user" && (
-												<span className="text-blue-600 text-xs">
+												<span className="text-primary text-xs">
 													Custom condition
 												</span>
 											)}
@@ -262,7 +262,7 @@ export function ConditionsSelector({
 					{selectedConditionNames.map((name) => (
 						<span
 							key={name || Math.random().toString(36)}
-							className="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-blue-800 text-sm"
+							className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-primary text-sm"
 						>
 							{name}
 							<button
@@ -277,7 +277,7 @@ export function ConditionsSelector({
 										selectedConditions.filter((id) => id !== conditionId),
 									);
 								}}
-								className="ml-1 rounded-full p-0.5 hover:bg-blue-200"
+								className="ml-1 rounded-full p-0.5 hover:bg-primary/20"
 							>
 								×
 							</button>

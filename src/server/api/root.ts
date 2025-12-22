@@ -1,8 +1,10 @@
 import { ocrRouter } from "@/server/api/routers/ocr";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { conditionsRouter } from "./routers/conditions";
+import { medicationAnalysisRouter } from "./routers/medication-analysis";
 import { medicationsRouter } from "./routers/medications";
 import { profileRouter } from "./routers/profile";
+import { reportsRouter } from "./routers/reports";
 
 /**
  * This is the primary router for your server.
@@ -14,6 +16,8 @@ export const appRouter = createTRPCRouter({
 	conditions: conditionsRouter,
 	ocr: ocrRouter,
 	medications: medicationsRouter,
+	medicationAnalysis: medicationAnalysisRouter,
+	reports: reportsRouter,
 });
 
 // export type definition of API

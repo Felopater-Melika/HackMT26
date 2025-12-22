@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { LogOut, Scan, LayoutDashboard, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Nav() {
 	const router = useRouter();
@@ -33,12 +34,12 @@ export function Nav() {
 	];
 
 	return (
-		<nav className="border-b bg-white">
+		<nav className="border-b bg-background">
 			<div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
 				<div className="flex items-center gap-6">
 					<Link
 						href="/app"
-						className="font-bold text-lg text-gray-900 hover:text-gray-700"
+						className="font-bold text-lg text-foreground hover:text-foreground/80"
 					>
 						Cliniq
 					</Link>
@@ -53,8 +54,8 @@ export function Nav() {
 									className={cn(
 										"flex items-center gap-2 rounded-md px-3 py-2 font-medium text-sm transition-colors",
 										isActive
-											? "bg-gray-100 text-gray-900"
-											: "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+											? "bg-accent text-accent-foreground"
+											: "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
 									)}
 								>
 									<Icon className="h-4 w-4" />
@@ -64,14 +65,17 @@ export function Nav() {
 						})}
 					</div>
 				</div>
-				<Button
-					variant="ghost"
-					onClick={handleSignOut}
-					className="flex items-center gap-2"
-				>
-					<LogOut className="h-4 w-4" />
-					<span className="hidden sm:inline">Sign Out</span>
-				</Button>
+				<div className="flex items-center gap-2">
+					<ThemeToggle />
+					<Button
+						variant="ghost"
+						onClick={handleSignOut}
+						className="flex items-center gap-2"
+					>
+						<LogOut className="h-4 w-4" />
+						<span className="hidden sm:inline">Sign Out</span>
+					</Button>
+				</div>
 			</div>
 			{/* Mobile menu */}
 			<div className="border-t sm:hidden">
@@ -86,8 +90,8 @@ export function Nav() {
 								className={cn(
 									"flex flex-col items-center gap-1 rounded-md px-3 py-2 text-xs transition-colors",
 									isActive
-										? "text-gray-900"
-										: "text-gray-600 hover:text-gray-900",
+										? "text-foreground"
+										: "text-muted-foreground hover:text-foreground",
 								)}
 							>
 								<Icon className="h-5 w-5" />

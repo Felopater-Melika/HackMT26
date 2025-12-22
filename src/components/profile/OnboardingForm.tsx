@@ -83,7 +83,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 	};
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+		<div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
 			<Card className="w-full max-w-md">
 				<CardHeader className="text-center">
 					<CardTitle className="font-bold text-2xl">
