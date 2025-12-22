@@ -18,6 +18,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@azure/cognitiveservices-computervision": "^8.2.0",
+    "@azure/ms-rest-azure-js": "^2.1.0",
     "@azure/openai": "^2.0.0",
     "@better-auth/cli": "^1.4.7",
     "@hookform/resolvers": "^5.2.2",
