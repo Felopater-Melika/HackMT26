@@ -40,6 +40,7 @@ const auth = betterAuth({
 	emailVerification: {
 		sendOnSignUp: true,
 		autoSignInAfterVerification: true,
+		defaultCallbackURL: "/app",
 		async sendVerificationEmail(
 			{ user, url, token }: { user: unknown; url: string; token: string },
 			request?: Request,
@@ -51,10 +52,8 @@ const auth = betterAuth({
 			);
 			console.log("Verification URL:", url);
 
-			// Parse URL and set/replace callbackURL
-			const urlObj = new URL(url);
-			urlObj.searchParams.set("callbackURL", "/app");
-			const verificationUrl = urlObj.toString();
+			// Better Auth already includes the correct callbackURL
+			const verificationUrl = url;
 			
 			// !TODO: Clean up the emails
 			try {
