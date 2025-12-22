@@ -5,6 +5,8 @@ import { api } from "@/trpc/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
 	title: "Scan Medications",
 	description:

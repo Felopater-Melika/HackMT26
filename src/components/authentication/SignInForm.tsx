@@ -76,7 +76,10 @@ export function SignInForm({
 		setResendError(null);
 
 		try {
-			await authClient.sendVerificationEmail({ email: verificationEmail });
+			await authClient.sendVerificationEmail({
+				email: verificationEmail,
+				callbackURL: "/app",
+			});
 		} catch (err: unknown) {
 			setResendError(
 				err instanceof Error
