@@ -42,7 +42,7 @@ const profileSchema = z.object({
 		.min(1, "Age must be at least 1")
 		.max(120, "Age must be at most 120"),
 	gender: z.string().min(1, "Please select a gender"),
-	conditionIds: z.array(z.string()).default([]),
+	conditionIds: z.array(z.string()),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -59,7 +59,7 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 
 	const { data: profile, isLoading: profileLoading } =
 		api.profile.getProfile.useQuery();
-	const { data: userConditions = [] } =
+	const { data: userConditions = [], isLoading: conditionsLoading } =
 		api.conditions.getUserConditions.useQuery();
 
 	const utils = api.useUtils();
@@ -81,7 +81,7 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 		},
 	});
 
-	const form = useForm({
+	const form = useForm<ProfileFormData>({
 		resolver: zodResolver(profileSchema),
 		defaultValues: {
 			name: "",
@@ -93,7 +93,7 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 
 	// Update form when profile data loads
 	useEffect(() => {
-		if (profile) {
+		if (profile && !profileLoading) {
 			const formData = {
 				name: profile.name || "",
 				age: profile.age || 0,
@@ -104,7 +104,7 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 			form.reset(formData);
 			setSelectedConditions(userConditions.map((c) => c.id));
 		}
-	}, [profile, userConditions, form]);
+	}, [profile, userConditions, profileLoading, form]);
 
 	const onSubmit = async (data: ProfileFormData) => {
 		setIsSubmitting(true);
@@ -122,7 +122,10 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 		}
 	};
 
-	if (profileLoading && variant === "page") {
+	// Show loading state for both variants
+	const isLoading = profileLoading || conditionsLoading || !profile;
+	
+	if (isLoading && variant === "page") {
 		return (
 			<div className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
 				<div className="mx-auto max-w-2xl">
@@ -137,6 +140,17 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 							</div>
 						</div>
 					</div>
+				</div>
+			</div>
+		);
+	}
+
+	if (isLoading && variant === "modal") {
+		return (
+			<div className="space-y-4">
+				<div className="animate-pulse">
+					<div className="h-4 w-1/2 rounded bg-muted" />
+					<div className="mt-2 h-10 rounded bg-muted" />
 				</div>
 			</div>
 		);
