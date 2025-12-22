@@ -60,7 +60,7 @@ const auth = betterAuth({
 				}
 				
 				const result = await resend.emails.send({
-					from: "onboarding@resend.dev",
+					from: "Cliniq Care <noreply@cliniq.care>",
 					to: userEmail,
 					subject: "Verify your email address",
 					html: `
@@ -97,7 +97,7 @@ const auth = betterAuth({
 				}
 				
 				const result = await resend.emails.send({
-					from: "onboarding@resend.dev",
+					from: "Cliniq Care <noreply@cliniq.care>",
 					to: userEmail,
 					subject: "Reset your password",
 					html: `
