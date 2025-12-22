@@ -51,7 +51,11 @@ const auth = betterAuth({
 			);
 			console.log("Verification URL:", url);
 
-			const verificationUrl = `${url}&callbackURL=/app`;
+			// Parse URL and set/replace callbackURL
+			const urlObj = new URL(url);
+			urlObj.searchParams.set("callbackURL", "/app");
+			const verificationUrl = urlObj.toString();
+			
 			// !TODO: Clean up the emails
 			try {
 				const userEmail = (user as { email?: string })?.email;
