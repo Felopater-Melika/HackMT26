@@ -23,6 +23,13 @@ const resend = new Resend(env.RESEND_TOKEN);
 const auth = betterAuth({
 	baseURL: env.BETTER_AUTH_URL,
 	secret: env.BETTER_AUTH_SECRET,
+	trustedOrigins: [
+		"http://localhost:3000",
+		"https://cliniq.care",
+		"https://www.cliniq.care",
+		"https://cliniq-ijnhdiovn-felopatermelikas-projects.vercel.app",
+		...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+	],
 	database: drizzleAdapter(db, {
 		provider: "pg",
 	}),
