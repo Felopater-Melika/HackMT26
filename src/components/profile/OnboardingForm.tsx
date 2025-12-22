@@ -18,6 +18,8 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
 	Select,
 	SelectContent,
@@ -117,42 +119,42 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 								)}
 							/>
 
-							<FormField
-								control={form.control}
-								name="gender"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Gender</FormLabel>
-										<Select
-											onValueChange={field.onChange}
-											defaultValue={field.value}
-										>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue placeholder="Select your gender" />
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												<SelectItem value="male">Male</SelectItem>
-												<SelectItem value="female">Female</SelectItem>
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+						<FormField
+							control={form.control}
+							name="gender"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Gender</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										defaultValue={field.value}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue placeholder="Select your gender" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											<SelectItem value="male">Male</SelectItem>
+											<SelectItem value="female">Female</SelectItem>
+											<SelectItem value="other">Other</SelectItem>
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
-							<FormItem>
-								<FormLabel>Medical Conditions (Optional)</FormLabel>
-								<FormControl>
-									<ConditionsSelector
-										selectedConditions={selectedConditions}
-										onSelectionChange={setSelectedConditions}
-										placeholder="Search for conditions..."
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
+						<Separator />
+
+						<div className="space-y-2">
+							<Label>Medical Conditions (Optional)</Label>
+							<ConditionsSelector
+								selectedConditions={selectedConditions}
+								onSelectionChange={setSelectedConditions}
+								placeholder="Search for conditions..."
+							/>
+						</div>
 
 							<Button type="submit" className="w-full" disabled={isSubmitting}>
 								{isSubmitting ? "Creating Profile..." : "Complete Onboarding"}
