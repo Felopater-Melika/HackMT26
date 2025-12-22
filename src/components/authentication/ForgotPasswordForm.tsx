@@ -15,7 +15,7 @@ export function ForgotPasswordForm() {
 		setIsLoading(true);
 
 		try {
-			await authClient.forgetPassword({ email });
+			await authClient.forgotPassword({ email });
 			setIsSent(true);
 		} catch (error) {
 			console.error("Failed to send reset email:", error);
