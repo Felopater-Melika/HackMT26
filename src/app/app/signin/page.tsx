@@ -1,4 +1,14 @@
 import { SignInForm } from "@/components/authentication/SignInForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "Sign In",
+	description: "Sign in to your Cliniq Care account to access medication safety analysis.",
+	robots: {
+		index: false,
+		follow: false,
+	},
+};
 
 export default function SigninPage() {
 	return (

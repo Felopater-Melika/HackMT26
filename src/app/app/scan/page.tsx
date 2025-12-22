@@ -3,6 +3,17 @@ import { Nav } from "@/components/Nav";
 import { OnboardingWrapper } from "@/components/profile/OnboardingWrapper";
 import { api } from "@/trpc/server";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "Scan Medications",
+	description:
+		"Scan your medications using OCR or add them manually. Get AI-powered safety analysis and interaction warnings.",
+	robots: {
+		index: false,
+		follow: false,
+	},
+};
 
 export default async function ScanPage() {
 	try {

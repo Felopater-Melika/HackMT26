@@ -1,4 +1,15 @@
 import { SignUpForm } from "@/components/authentication/SignUpForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "Sign Up",
+	description:
+		"Create your Cliniq Care account to start analyzing medication safety with AI-powered insights.",
+	robots: {
+		index: false,
+		follow: false,
+	},
+};
 
 export default function SignupPage() {
 	return (
