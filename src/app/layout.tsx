@@ -91,32 +91,8 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 	const isProduction = process.env.NODE_ENV === "production";
 
-	const structuredData = {
-		"@context": "https://schema.org",
-		"@type": "WebApplication",
-		name: "Cliniq Care",
-		description:
-			"AI-powered medication safety analysis platform that helps users check for drug interactions and receive personalized health recommendations.",
-		url: process.env.NEXT_PUBLIC_APP_URL || "https://cliniq.care",
-		applicationCategory: "HealthApplication",
-		operatingSystem: "Web",
-		offers: {
-			"@type": "Offer",
-			price: "0",
-			priceCurrency: "USD",
-		},
-	};
-
 	return (
 		<html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
-			<head>
-				<script
-					type="application/ld+json"
-					dangerouslySetInnerHTML={{
-						__html: JSON.stringify(structuredData),
-					}}
-				/>
-			</head>
 			<body>
 				<ThemeProvider defaultTheme="system" storageKey="cliniq-theme">
 					{isProduction ? (

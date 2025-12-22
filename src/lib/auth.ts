@@ -47,9 +47,14 @@ const auth = betterAuth({
 			const verificationUrl = `${url}&callbackURL=/app`;
 			// !TODO: Clean up the emails
 			try {
+				const userEmail = (user as { email?: string })?.email;
+				if (!userEmail) {
+					throw new Error("User email is required");
+				}
+				
 				const result = await resend.emails.send({
 					from: "onboarding@resend.dev",
-					to: (user as { email?: string })?.email,
+					to: userEmail,
 					subject: "Verify your email address",
 					html: `
             <h1>Verify your email</h1>
@@ -79,9 +84,14 @@ const auth = betterAuth({
 			console.log("Reset URL:", url);
 
 			try {
+				const userEmail = (user as { email?: string })?.email;
+				if (!userEmail) {
+					throw new Error("User email is required");
+				}
+				
 				const result = await resend.emails.send({
 					from: "onboarding@resend.dev",
-					to: (user as { email?: string })?.email,
+					to: userEmail,
 					subject: "Reset your password",
 					html: `
             <h1>Reset your password</h1>

@@ -387,7 +387,7 @@ Now provide your comprehensive analysis of interactions between these medication
 
 		// Extract summary (first paragraph or first 2-3 sentences)
 		const summaryMatch = text.match(/^(.{100,300}?[.!?])/);
-		const summary = summaryMatch ? summaryMatch[1].trim() : text.substring(0, 200);
+		const summary = (summaryMatch ? summaryMatch[1]?.trim() : text.substring(0, 200)) || "";
 
 		const requiresAttention =
 			safetyScore < 70 ||
