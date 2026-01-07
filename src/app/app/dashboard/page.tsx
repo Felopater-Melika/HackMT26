@@ -10,7 +10,6 @@ import {
 	ChevronUp,
 	Pill,
 	Plus,
-	Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/trpc/react";
@@ -18,19 +17,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export default function DashboardPage() {
-	const utils = api.useUtils();
 	const { data: reports, isLoading } = api.reports.getAll.useQuery();
-	const deleteReport = api.reports.delete.useMutation({
-		onSuccess: () => {
-			toast.success("Report deleted");
-			utils.reports.getAll.invalidate();
-		},
-		onError: (error) => {
-			toast.error("Failed to delete report", {
-				description: error.message,
-			});
-		},
-	});
+	const { data: usage } = api.usage.getUsage.useQuery();
 
 	const [expandedReports, setExpandedReports] = useState<Set<string>>(
 		new Set(),
@@ -46,16 +34,6 @@ export default function DashboardPage() {
 		setExpandedReports(newExpanded);
 	};
 
-	const handleDelete = (
-		reportId: string,
-		e: React.MouseEvent<HTMLButtonElement>,
-	) => {
-		e.stopPropagation(); // Prevent expanding/collapsing when clicking delete
-		if (confirm("Are you sure you want to delete this report?")) {
-			deleteReport.mutate({ id: reportId });
-		}
-	};
-
 	return (
 		<div className="min-h-screen bg-background">
 			<Nav />
@@ -68,12 +46,50 @@ export default function DashboardPage() {
 						</p>
 					</div>
 					<Link href="/app/scan">
-						<Button>
+						<Button disabled={usage?.hasReachedLimit}>
 							<Plus className="mr-2 h-4 w-4" />
 							New Scan
 						</Button>
 					</Link>
 				</div>
+
+				{/* Usage Card */}
+				{usage && (
+					<Card className="mb-6 border">
+						<div className="p-4">
+							<div className="flex items-center justify-between">
+								<div>
+									<h3 className="mb-1 font-semibold text-sm text-foreground">
+										Scan Usage
+									</h3>
+									<p className="text-muted-foreground text-sm">
+										{usage.hasReachedLimit
+											? "You've reached your limit"
+											: `${usage.remaining} scan${usage.remaining !== 1 ? "s" : ""} remaining`}
+									</p>
+								</div>
+								<div className="text-right">
+									<div
+										className={`font-bold text-2xl ${
+											usage.hasReachedLimit
+												? "text-destructive"
+												: usage.remaining === 1
+													? "text-yellow-600"
+													: "text-primary"
+										}`}
+									>
+										{usage.remaining} / {usage.limit}
+									</div>
+								</div>
+							</div>
+							{usage.hasReachedLimit && (
+								<div className="mt-3 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+									⚠️ You've used all {usage.limit} scans. Upgrade to continue analyzing medications.
+								</div>
+							)}
+						</div>
+					</Card>
+				)}
 
 				{isLoading ? (
 					<Card className="border p-8 text-center">
@@ -140,15 +156,6 @@ export default function DashboardPage() {
 											</div>
 										</div>
 										<div className="flex items-center gap-2">
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={(e) => handleDelete(report.id, e)}
-												disabled={deleteReport.isPending}
-												className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-											>
-												<Trash2 className="h-4 w-4" />
-											</Button>
 											<Button variant="ghost" size="icon">
 												{isExpanded ? (
 													<ChevronUp className="h-5 w-5" />

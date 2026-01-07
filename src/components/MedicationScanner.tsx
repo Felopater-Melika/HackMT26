@@ -25,7 +25,7 @@ import {
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import { Upload, Trash2, Scan, Plus, FileText } from "lucide-react";
+import { Upload, Trash2, Scan, Plus, FileText, AlertCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -81,8 +81,15 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 	const [isInitialized, setIsInitialized] = useState(false);
 
 	const router = useRouter();
+	const utils = api.useUtils();
 	const ocrMutation = api.ocr.analyzeImages.useMutation();
-	const medsAnalyzeMutation = api.medications.analyze.useMutation();
+	const medsAnalyzeMutation = api.medications.analyze.useMutation({
+		onSuccess: () => {
+			// Invalidate usage query after successful analysis
+			utils.usage.getUsage.invalidate();
+		},
+	});
+	const { data: usage } = api.usage.getUsage.useQuery();
 
 	// Load from localStorage on mount
 	useEffect(() => {
@@ -268,6 +275,21 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 	};
 
 	const handleAnalyzeMedications = async () => {
+		// Check usage limit before proceeding
+		if (usage?.hasReachedLimit) {
+			toast.error("Scan limit reached", {
+				description: `You've used all ${usage.limit} scans. Please upgrade to continue.`,
+			});
+			return;
+		}
+
+		if (rows.length === 0) {
+			toast.error("No medications to analyze", {
+				description: "Please add medications before analyzing.",
+			});
+			return;
+		}
+
 		try {
 			console.log("🚀 Starting medication analysis...");
 			
@@ -443,6 +465,75 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 
 	return (
 		<div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+			{/* Usage Display Banner */}
+			{usage && (
+				<div className="mb-6 rounded-lg border-2 bg-gradient-to-r from-card to-card/50 p-4 shadow-lg">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-4">
+							<div
+								className={`flex h-12 w-12 items-center justify-center rounded-full ${
+									usage.hasReachedLimit
+										? "bg-destructive/20 text-destructive"
+										: usage.remaining === 1
+											? "bg-yellow-500/20 text-yellow-600"
+											: "bg-primary/20 text-primary"
+								}`}
+							>
+								<Scan className="h-6 w-6" />
+							</div>
+							<div>
+								<h3 className="font-semibold text-lg text-foreground">
+									Scan Usage
+								</h3>
+								<p className="text-muted-foreground text-sm">
+									{usage.hasReachedLimit
+										? "You've used all available scans"
+										: `${usage.remaining} scan${usage.remaining !== 1 ? "s" : ""} remaining`}
+								</p>
+							</div>
+						</div>
+						<div className="text-right">
+							<div
+								className={`font-bold text-3xl ${
+									usage.hasReachedLimit
+										? "text-destructive"
+										: usage.remaining === 1
+											? "text-yellow-600"
+											: "text-primary"
+								}`}
+							>
+								{usage.remaining}/{usage.limit}
+							</div>
+							<div className="mt-2 h-2 w-32 overflow-hidden rounded-full bg-muted">
+								<div
+									className={`h-full transition-all ${
+										usage.hasReachedLimit
+											? "w-full bg-destructive"
+											: usage.remaining === 1
+												? "w-1/3 bg-yellow-500"
+												: usage.remaining === 2
+													? "w-2/3 bg-primary"
+													: "w-full bg-primary"
+									}`}
+									style={{
+										width: `${(usage.remaining / usage.limit) * 100}%`,
+									}}
+								/>
+							</div>
+						</div>
+					</div>
+					{usage.hasReachedLimit && (
+						<div className="mt-4 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-destructive">
+							<AlertCircle className="h-5 w-5 shrink-0" />
+							<p className="text-sm font-medium">
+								You've reached your limit of {usage.limit} scans. Please upgrade to
+								continue analyzing medications.
+							</p>
+						</div>
+					)}
+				</div>
+			)}
+
 			{/* Header */}
 			<div className="mb-8">
 				<h1 className="mb-2 font-bold text-3xl text-foreground">
@@ -591,13 +682,19 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 										variant="default"
 										size="sm"
 										onClick={handleAnalyzeMedications}
-										disabled={medsAnalyzeMutation.isPending}
+										disabled={
+											medsAnalyzeMutation.isPending ||
+											usage?.hasReachedLimit ||
+											rows.length === 0
+										}
 										className="gap-2"
 									>
 										<Scan className="h-4 w-4" />
 										{medsAnalyzeMutation.isPending
 											? "Analyzing..."
-											: "Analyze All"}
+											: usage?.hasReachedLimit
+												? "Limit Reached"
+												: "Analyze All"}
 									</Button>
 								</div>
 							</div>

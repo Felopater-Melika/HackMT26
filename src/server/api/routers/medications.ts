@@ -2,7 +2,9 @@ import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { z } from "zod";
 import { createMedicationAnalyzer } from "@/lib/medication-analyzer";
 import { reports, scans, scanMedications, medications as medicationsTable } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
+
+const MAX_SCANS_PER_USER = 3;
 
 export const medicationsRouter = createTRPCRouter({
 	analyze: protectedProcedure
@@ -19,6 +21,19 @@ export const medicationsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
+			// Check usage limit before processing
+			const [usageResult] = await ctx.db
+				.select({ count: count() })
+				.from(reports)
+				.where(eq(reports.userId, ctx.session.user.id));
+
+			const scanCount = usageResult?.count ?? 0;
+			if (scanCount >= MAX_SCANS_PER_USER) {
+				throw new Error(
+					`You've reached your limit of ${MAX_SCANS_PER_USER} scans. Please upgrade to continue.`,
+				);
+			}
+
 			console.log(
 				"\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
 			);
@@ -27,6 +42,7 @@ export const medicationsRouter = createTRPCRouter({
 				"📋 Medications received:",
 				JSON.stringify(input.medications, null, 2),
 			);
+			console.log(`📊 Usage: ${scanCount}/${MAX_SCANS_PER_USER} scans used`);
 			console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
 			// Create analyzer
