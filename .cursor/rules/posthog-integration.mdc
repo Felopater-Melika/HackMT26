@@ -1,12 +1,12 @@
 ---
-description: apply when interacting with PostHog/analytics tasks
+description: apply when interacting with the PostHog/analytics tasks
 globs: 
 alwaysApply: true
 ---
 
 Never hallucinate an API key. Instead, always use the API key populated in the .env file.
 
-# Feature flags
+# Feature flags 
 
 A given feature flag should be used in as few places as possible. Do not increase the risk of undefined behavior by scattering the same feature flag across multiple areas of code. If the same feature flag needs to be introduced at multiple callsites, flag this for the developer to inspect carefully.
 
