@@ -71,10 +71,7 @@ export const postComments = createTable(
 			.references(() => user.id, { onDelete: "cascade" })
 			.notNull(),
 		content: text("content").notNull(),
-		parentCommentId: uuid("parent_comment_id").references(
-			() => postComments.id,
-			{ onDelete: "cascade" },
-		), // For nested comments/replies
+		parentCommentId: uuid("parent_comment_id"), // For nested comments/replies (self-reference - FK added via migration)
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()

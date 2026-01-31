@@ -254,6 +254,10 @@ export const socialRouter = createTRPCRouter({
 				})
 				.returning();
 
+			if (!newPost) {
+				throw new Error("Failed to create post");
+			}
+
 			// Insert images if provided
 			if (input.imageUrls && input.imageUrls.length > 0) {
 				await ctx.db.insert(postImages).values(
@@ -405,6 +409,10 @@ export const socialRouter = createTRPCRouter({
 				})
 				.returning();
 
+			if (!newComment) {
+				throw new Error("Failed to create comment");
+			}
+
 			// Get comment with author info
 			const [commentWithAuthor] = await ctx.db
 				.select({
@@ -419,6 +427,10 @@ export const socialRouter = createTRPCRouter({
 				.leftJoin(user, eq(postComments.userId, user.id))
 				.where(eq(postComments.id, newComment.id))
 				.limit(1);
+
+			if (!commentWithAuthor) {
+				throw new Error("Failed to fetch comment");
+			}
 
 			return commentWithAuthor;
 		}),
