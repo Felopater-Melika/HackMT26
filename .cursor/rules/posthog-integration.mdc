@@ -1,5 +1,5 @@
 ---
-description: apply when interacting with the PostHog/analytics tasks
+description: apply when interacting with PostHog/analytics tasks
 globs: 
 alwaysApply: true
 ---
