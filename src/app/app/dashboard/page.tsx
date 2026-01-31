@@ -15,6 +15,7 @@ import Link from "next/link";
 import { api } from "@/trpc/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 
 export default function DashboardPage() {
 	const { data: reports, isLoading } = api.reports.getAll.useQuery();
@@ -339,6 +340,7 @@ export default function DashboardPage() {
 					</div>
 				)}
 			</div>
+			<ChatWidget />
 		</div>
 	);
 }
