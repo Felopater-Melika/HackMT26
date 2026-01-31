@@ -5,7 +5,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Scan, Shield, Brain, Heart } from "lucide-react";
-
 export const metadata: Metadata = {
 	title: "Cliniq Care - AI-Powered Medication Safety Analysis",
 	description:
@@ -33,38 +32,55 @@ export default async function Home() {
 
 	return (
 		<div className="min-h-screen bg-background">
-			{/* Hero Section */}
-			<header className="border-b">
+			{/* Gradient mesh background */}
+			<div className="pointer-events-none fixed inset-0 overflow-hidden">
+				<div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-emerald-400/20 blur-3xl dark:bg-emerald-500/10" />
+				<div className="absolute top-1/2 -left-40 h-96 w-96 rounded-full bg-violet-400/20 blur-3xl dark:bg-violet-500/10" />
+				<div className="absolute -bottom-40 right-1/3 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl dark:bg-cyan-500/10" />
+			</div>
+
+			{/* Header */}
+			<header className="relative border-b border-border/50 bg-background/80 backdrop-blur-md">
 				<div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
 					<div className="flex items-center justify-between">
-						<div className="font-bold text-xl text-foreground">Cliniq Care</div>
+						<div className="bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text font-bold text-xl text-transparent dark:from-emerald-400 dark:to-cyan-400">
+							Cliniq Care
+						</div>
 						<div className="flex items-center gap-4">
 							<Link href="/app/signin">
 								<Button variant="ghost">Sign In</Button>
 							</Link>
 							<Link href="/app/signup">
-								<Button>Get Started</Button>
+								<Button className="bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700">
+									Get Started
+								</Button>
 							</Link>
 						</div>
 					</div>
 				</div>
 			</header>
 
-			<main>
+			<main className="relative">
 				{/* Hero */}
-				<section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+				<section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 					<div className="mx-auto max-w-3xl text-center">
-						<h1 className="font-bold text-5xl tracking-tight text-foreground sm:text-6xl">
-							AI-Powered Medication Safety Analysis
+						<h1 className="font-bold text-4xl tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+							<span className="bg-gradient-to-r from-emerald-600 via-cyan-600 to-violet-600 bg-clip-text text-transparent dark:from-emerald-400 dark:via-cyan-400 dark:to-violet-400">
+								AI-Powered
+							</span>{" "}
+							Medication Safety Analysis
 						</h1>
 						<p className="mt-6 text-lg leading-8 text-muted-foreground">
 							Scan your medications, check for dangerous interactions, and
-							receive personalized health recommendations powered by advanced AI
-							and real-time medical data.
+							receive personalized health recommendations powered by advanced
+							AI and real-time medical data.
 						</p>
-						<div className="mt-10 flex items-center justify-center gap-x-6">
+						<div className="mt-10 flex items-center justify-center gap-6">
 							<Link href="/app/signup">
-								<Button size="lg" className="text-lg">
+								<Button
+									size="lg"
+									className="bg-gradient-to-r from-emerald-600 to-cyan-600 text-lg hover:from-emerald-700 hover:to-cyan-700"
+								>
 									Start Analyzing
 								</Button>
 							</Link>
@@ -88,8 +104,10 @@ export default async function Home() {
 						</p>
 					</div>
 					<div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 sm:mt-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-						<div className="flex flex-col gap-4 rounded-lg border bg-card p-6">
-							<Scan className="h-8 w-8 text-primary" />
+						<div className="group flex flex-col gap-4 rounded-xl border border-emerald-200/50 bg-gradient-to-br from-emerald-50/80 to-cyan-50/50 p-6 dark:border-emerald-900/30 dark:from-emerald-950/30 dark:to-cyan-950/20">
+							<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-600 dark:bg-emerald-400/20 dark:text-emerald-400">
+								<Scan className="h-6 w-6" />
+							</div>
 							<h3 className="font-semibold text-xl text-foreground">
 								Smart Scanning
 							</h3>
@@ -98,8 +116,10 @@ export default async function Home() {
 								manually. Our AI identifies medications from images instantly.
 							</p>
 						</div>
-						<div className="flex flex-col gap-4 rounded-lg border bg-card p-6">
-							<Shield className="h-8 w-8 text-primary" />
+						<div className="group flex flex-col gap-4 rounded-xl border border-violet-200/50 bg-gradient-to-br from-violet-50/80 to-fuchsia-50/50 p-6 dark:border-violet-900/30 dark:from-violet-950/30 dark:to-fuchsia-950/20">
+							<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/20 text-violet-600 dark:bg-violet-400/20 dark:text-violet-400">
+								<Shield className="h-6 w-6" />
+							</div>
 							<h3 className="font-semibold text-xl text-foreground">
 								Interaction Checking
 							</h3>
@@ -108,8 +128,10 @@ export default async function Home() {
 								and safety concerns based on your medical conditions.
 							</p>
 						</div>
-						<div className="flex flex-col gap-4 rounded-lg border bg-card p-6">
-							<Brain className="h-8 w-8 text-primary" />
+						<div className="group flex flex-col gap-4 rounded-xl border border-cyan-200/50 bg-gradient-to-br from-cyan-50/80 to-blue-50/50 p-6 dark:border-cyan-900/30 dark:from-cyan-950/30 dark:to-blue-950/20">
+							<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-600 dark:bg-cyan-400/20 dark:text-cyan-400">
+								<Brain className="h-6 w-6" />
+							</div>
 							<h3 className="font-semibold text-xl text-foreground">
 								AI Analysis
 							</h3>
@@ -118,8 +140,10 @@ export default async function Home() {
 								OpenFDA data, and your medical history.
 							</p>
 						</div>
-						<div className="flex flex-col gap-4 rounded-lg border bg-card p-6">
-							<Heart className="h-8 w-8 text-primary" />
+						<div className="group flex flex-col gap-4 rounded-xl border border-rose-200/50 bg-gradient-to-br from-rose-50/80 to-pink-50/50 p-6 dark:border-rose-900/30 dark:from-rose-950/30 dark:to-pink-950/20">
+							<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/20 text-rose-600 dark:bg-rose-400/20 dark:text-rose-400">
+								<Heart className="h-6 w-6" />
+							</div>
 							<h3 className="font-semibold text-xl text-foreground">
 								Personalized Care
 							</h3>
@@ -128,9 +152,9 @@ export default async function Home() {
 								your specific health profile.
 							</p>
 						</div>
-						<div className="flex flex-col gap-4 rounded-lg border bg-card p-6">
-							<div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-								<span className="text-primary font-bold">📊</span>
+						<div className="group flex flex-col gap-4 rounded-xl border border-amber-200/50 bg-gradient-to-br from-amber-50/80 to-orange-50/50 p-6 dark:border-amber-900/30 dark:from-amber-950/30 dark:to-orange-950/20">
+							<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:bg-amber-400/20 dark:text-amber-400">
+								<span className="text-xl font-bold">📊</span>
 							</div>
 							<h3 className="font-semibold text-xl text-foreground">
 								Safety Reports
@@ -140,9 +164,9 @@ export default async function Home() {
 								contraindications, and personalized recommendations.
 							</p>
 						</div>
-						<div className="flex flex-col gap-4 rounded-lg border bg-card p-6">
-							<div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-								<span className="text-primary font-bold">🔒</span>
+						<div className="group flex flex-col gap-4 rounded-xl border border-sky-200/50 bg-gradient-to-br from-sky-50/80 to-indigo-50/50 p-6 dark:border-sky-900/30 dark:from-sky-950/30 dark:to-indigo-950/20">
+							<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/20 text-sky-600 dark:bg-sky-400/20 dark:text-sky-400">
+								<span className="text-xl font-bold">🔒</span>
 							</div>
 							<h3 className="font-semibold text-xl text-foreground">
 								Secure & Private
@@ -157,30 +181,37 @@ export default async function Home() {
 
 				{/* CTA */}
 				<section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-					<div className="mx-auto max-w-2xl text-center">
-						<h2 className="font-bold text-3xl tracking-tight text-foreground sm:text-4xl">
-							Ready to get started?
-						</h2>
-						<p className="mt-4 text-lg text-muted-foreground">
-							Join thousands of users who trust Cliniq Care for medication safety
-							analysis.
-						</p>
-						<div className="mt-8">
-							<Link href="/app/signup">
-								<Button size="lg" className="text-lg">
-									Create Free Account
-								</Button>
-							</Link>
+					<div className="relative overflow-hidden rounded-3xl border border-emerald-200/50 bg-gradient-to-br from-emerald-500/10 via-cyan-500/10 to-violet-500/10 p-12 dark:border-emerald-900/30">
+						<div className="mx-auto max-w-2xl text-center">
+							<h2 className="font-bold text-3xl tracking-tight text-foreground sm:text-4xl">
+								Ready to get started?
+							</h2>
+							<p className="mt-4 text-lg text-muted-foreground">
+								Join thousands of users who trust Cliniq Care for medication
+								safety analysis.
+							</p>
+							<div className="mt-8">
+								<Link href="/app/signup">
+									<Button
+										size="lg"
+										className="bg-gradient-to-r from-emerald-600 to-cyan-600 text-lg hover:from-emerald-700 hover:to-cyan-700"
+									>
+										Create Free Account
+									</Button>
+								</Link>
+							</div>
 						</div>
 					</div>
 				</section>
 			</main>
 
 			{/* Footer */}
-			<footer className="border-t">
+			<footer className="relative border-t border-border/50">
 				<div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 					<div className="text-center">
-						<div className="font-bold text-lg text-foreground">Cliniq Care</div>
+						<div className="bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text font-bold text-lg text-transparent dark:from-emerald-400 dark:to-cyan-400">
+							Cliniq Care
+						</div>
 						<p className="mt-4 text-sm text-muted-foreground">
 							AI-Powered Medication Safety Analysis
 						</p>
