@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { PostCard } from "@/components/social/PostCard";
 import { Nav } from "@/components/Nav";
 import { api } from "@/trpc/react";
@@ -13,15 +14,33 @@ export default function PostDetailPage({
 	params: { postId: string };
 }) {
 	const router = useRouter();
-	const { data: session } = authClient.useSession();
+	const { data: session, isPending: sessionLoading } = authClient.useSession();
 
-	const { data: post, isLoading } = api.social.getPost.useQuery({
-		postId: params.postId,
-	});
+	// Redirect if not authenticated
+	useEffect(() => {
+		if (!sessionLoading && !session) {
+			router.push("/app/signin");
+		}
+	}, [session, sessionLoading, router]);
 
-	if (!session) {
-		router.push("/app/signin");
-		return null;
+	const { data: post, isLoading } = api.social.getPost.useQuery(
+		{
+			postId: params.postId,
+		},
+		{
+			enabled: !!session, // Only fetch if authenticated
+		},
+	);
+
+	if (sessionLoading || !session) {
+		return (
+			<div className="min-h-screen bg-background">
+				<Nav />
+				<div className="mx-auto flex max-w-4xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+					<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+				</div>
+			</div>
+		);
 	}
 
 	if (isLoading) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/social/PostCard";
 import { PostForm } from "@/components/social/PostForm";
@@ -24,7 +24,14 @@ export default function SocialFeedPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const router = useRouter();
 
-	const { data: session } = authClient.useSession();
+	const { data: session, isPending: sessionLoading } = authClient.useSession();
+
+	// Redirect if not authenticated
+	useEffect(() => {
+		if (!sessionLoading && !session) {
+			router.push("/app/signin");
+		}
+	}, [session, sessionLoading, router]);
 
 	const {
 		data,
@@ -40,6 +47,7 @@ export default function SocialFeedPage() {
 		},
 		{
 			getNextPageParam: (lastPage) => lastPage.nextCursor,
+			enabled: !!session, // Only fetch if authenticated
 		},
 	);
 
@@ -54,9 +62,16 @@ export default function SocialFeedPage() {
 			)
 		: posts;
 
-	if (!session) {
-		router.push("/app/signin");
-		return null;
+	// Show loading or nothing while checking session
+	if (sessionLoading || !session) {
+		return (
+			<div className="min-h-screen bg-background">
+				<Nav />
+				<div className="mx-auto flex max-w-4xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+					<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+				</div>
+			</div>
+		);
 	}
 
 	return (

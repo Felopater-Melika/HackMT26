@@ -34,11 +34,11 @@ export const posts = createTable(
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
-	(t) => ({
-		userIdIdx: index("posts_user_id_idx").on(t.userId),
-		medicationIdIdx: index("posts_medication_id_idx").on(t.medicationId),
-		createdAtIdx: index("posts_created_at_idx").on(t.createdAt),
-	}),
+	(t) => [
+		index("posts_user_id_idx").on(t.userId),
+		index("posts_medication_id_idx").on(t.medicationId),
+		index("posts_created_at_idx").on(t.createdAt),
+	],
 );
 
 // Images attached to posts
@@ -54,9 +54,7 @@ export const postImages = createTable(
 		order: integer("order").default(0).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(t) => ({
-		postIdIdx: index("post_images_post_id_idx").on(t.postId),
-	}),
+	(t) => [index("post_images_post_id_idx").on(t.postId)],
 );
 
 // Comments on posts
@@ -78,13 +76,11 @@ export const postComments = createTable(
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
-	(t) => ({
-		postIdIdx: index("post_comments_post_id_idx").on(t.postId),
-		userIdIdx: index("post_comments_user_id_idx").on(t.userId),
-		parentCommentIdIdx: index("post_comments_parent_comment_id_idx").on(
-			t.parentCommentId,
-		),
-	}),
+	(t) => [
+		index("post_comments_post_id_idx").on(t.postId),
+		index("post_comments_user_id_idx").on(t.userId),
+		index("post_comments_parent_comment_id_idx").on(t.parentCommentId),
+	],
 );
 
 // Likes on posts
@@ -100,10 +96,10 @@ export const postLikes = createTable(
 			.notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(t) => ({
-		postIdIdx: index("post_likes_post_id_idx").on(t.postId),
-		userIdIdx: index("post_likes_user_id_idx").on(t.userId),
-	}),
+	(t) => [
+		index("post_likes_post_id_idx").on(t.postId),
+		index("post_likes_user_id_idx").on(t.userId),
+	],
 );
 
 // Medication ratings (aggregated from posts)
@@ -127,16 +123,11 @@ export const medicationRatings = createTable(
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
-	(t) => ({
-		medicationIdIdx: index("medication_ratings_medication_id_idx").on(
-			t.medicationId,
-		),
-		userIdIdx: index("medication_ratings_user_id_idx").on(t.userId),
-		uniqueRating: uniqueIndex("medication_ratings_unique").on(
-			t.medicationId,
-			t.userId,
-		),
-	}),
+	(t) => [
+		index("medication_ratings_medication_id_idx").on(t.medicationId),
+		index("medication_ratings_user_id_idx").on(t.userId),
+		uniqueIndex("medication_ratings_unique").on(t.medicationId, t.userId),
+	],
 );
 
 // User follows (optional social feature)
@@ -152,14 +143,11 @@ export const userFollows = createTable(
 			.notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(t) => ({
-		followerIdIdx: index("user_follows_follower_id_idx").on(t.followerId),
-		followingIdIdx: index("user_follows_following_id_idx").on(t.followingId),
-		uniqueFollow: uniqueIndex("user_follows_unique").on(
-			t.followerId,
-			t.followingId,
-		),
-	}),
+	(t) => [
+		index("user_follows_follower_id_idx").on(t.followerId),
+		index("user_follows_following_id_idx").on(t.followingId),
+		uniqueIndex("user_follows_unique").on(t.followerId, t.followingId),
+	],
 );
 
 // Post reports (for moderation)
@@ -178,8 +166,8 @@ export const postReports = createTable(
 		status: text("status").default("pending"), // "pending", "reviewed", "resolved"
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(t) => ({
-		postIdIdx: index("post_reports_post_id_idx").on(t.postId),
-		userIdIdx: index("post_reports_user_id_idx").on(t.userId),
-	}),
+	(t) => [
+		index("post_reports_post_id_idx").on(t.postId),
+		index("post_reports_user_id_idx").on(t.userId),
+	],
 );

@@ -25,21 +25,22 @@ export const socialRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			const conditions = [eq(posts.isPublic, true)];
+			try {
+				const conditions = [eq(posts.isPublic, true)];
 
-			if (input.medicationId) {
-				conditions.push(eq(posts.medicationId, input.medicationId));
-			}
+				if (input.medicationId) {
+					conditions.push(eq(posts.medicationId, input.medicationId));
+				}
 
-			if (input.userId) {
-				conditions.push(eq(posts.userId, input.userId));
-			}
+				if (input.userId) {
+					conditions.push(eq(posts.userId, input.userId));
+				}
 
-			if (input.cursor) {
-				conditions.push(sql`${posts.createdAt} < (SELECT created_at FROM posts WHERE id = ${input.cursor})`);
-			}
+				if (input.cursor) {
+					conditions.push(sql`${posts.createdAt} < (SELECT created_at FROM posts WHERE id = ${input.cursor})`);
+				}
 
-			const feedPosts = await ctx.db
+				const feedPosts = await ctx.db
 				.select({
 					post: posts,
 					author: {
@@ -133,6 +134,12 @@ export const socialRouter = createTRPCRouter({
 				})),
 				nextCursor,
 			};
+			} catch (error) {
+				console.error("Error in getFeed:", error);
+				throw new Error(
+					`Failed to fetch feed: ${error instanceof Error ? error.message : "Unknown error"}`,
+				);
+			}
 		}),
 
 	// Get single post with details
@@ -236,60 +243,82 @@ export const socialRouter = createTRPCRouter({
 					.enum(["positive", "negative", "neutral", "side_effects"])
 					.optional(),
 				isPublic: z.boolean().default(true),
-				imageUrls: z.array(z.string().url()).max(5).optional().default([]),
+				imageUrls: z
+					.array(z.string())
+					.max(5)
+					.optional()
+					.default([])
+					.refine(
+						(urls) => urls.every((url) => url.startsWith("http") || url === ""),
+						{
+							message: "All image URLs must be valid HTTP/HTTPS URLs",
+						},
+					),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [newPost] = await ctx.db
-				.insert(posts)
-				.values({
-					userId: ctx.session.user.id,
-					medicationId: input.medicationId,
-					medicationName: input.medicationName,
-					title: input.title,
-					content: input.content,
-					rating: input.rating,
-					experienceType: input.experienceType,
-					isPublic: input.isPublic,
-				})
-				.returning();
-
-			if (!newPost) {
-				throw new Error("Failed to create post");
-			}
-
-			// Insert images if provided
-			if (input.imageUrls && input.imageUrls.length > 0) {
-				await ctx.db.insert(postImages).values(
-					input.imageUrls.map((url, index) => ({
-						postId: newPost.id,
-						imageUrl: url,
-						order: index,
-					})),
+			try {
+				// Filter out empty strings and invalid URLs
+				const validImageUrls = (input.imageUrls || []).filter(
+					(url) => url && url.startsWith("http"),
 				);
-			}
 
-			// If rating provided, create/update medication rating
-			if (input.rating && input.medicationId) {
-				await ctx.db
-					.insert(medicationRatings)
+				const [newPost] = await ctx.db
+					.insert(posts)
 					.values({
-						medicationId: input.medicationId,
 						userId: ctx.session.user.id,
+						medicationId: input.medicationId,
+						medicationName: input.medicationName,
+						title: input.title,
+						content: input.content,
 						rating: input.rating,
-						postId: newPost.id,
+						experienceType: input.experienceType,
+						isPublic: input.isPublic,
 					})
-					.onConflictDoUpdate({
-						target: [medicationRatings.medicationId, medicationRatings.userId],
-						set: {
+					.returning();
+
+				if (!newPost) {
+					throw new Error("Failed to create post");
+				}
+
+				// Insert images if provided
+				if (validImageUrls.length > 0) {
+					await ctx.db.insert(postImages).values(
+						validImageUrls.map((url, index) => ({
+							postId: newPost.id,
+							imageUrl: url,
+							order: index,
+						})),
+					);
+				}
+
+				// If rating provided, create/update medication rating
+				if (input.rating && input.medicationId) {
+					await ctx.db
+						.insert(medicationRatings)
+						.values({
+							medicationId: input.medicationId,
+							userId: ctx.session.user.id,
 							rating: input.rating,
 							postId: newPost.id,
-							updatedAt: new Date(),
-						},
-					});
-			}
+						})
+						.onConflictDoUpdate({
+							target: [medicationRatings.medicationId, medicationRatings.userId],
+							set: {
+								rating: input.rating,
+								postId: newPost.id,
+								updatedAt: new Date(),
+							},
+						});
+				}
 
-			return newPost;
+				return newPost;
+			} catch (error) {
+				console.error("Error in createPost:", error);
+				throw new Error(
+					`Failed to create post: ${error instanceof Error ? error.message : "Unknown error"}`,
+				);
+			}
 		}),
 
 	// Update post

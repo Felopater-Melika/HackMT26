@@ -17,6 +17,7 @@ import { api } from "@/trpc/react";
 import { Star, X, Upload, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface PostFormProps {
 	medicationId?: string;
@@ -74,6 +75,10 @@ export function PostForm({
 					router.push("/app/social");
 				}
 			},
+			onError: (error) => {
+				console.error("Failed to create post:", error);
+				toast.error(`Failed to create post: ${error.message}`);
+			},
 		});
 
 	const { mutate: updatePost, isPending: isUpdating } =
@@ -126,23 +131,28 @@ export function PostForm({
 			});
 		} else {
 			createPost({
-				medicationId,
-				medicationName: initialMedicationName,
+				medicationId: medicationId || undefined,
+				medicationName: initialMedicationName || undefined,
 				title: title.trim(),
 				content: content.trim(),
-				rating,
-				experienceType,
+				rating: rating || undefined,
+				experienceType: experienceType || undefined,
 				isPublic,
-				imageUrls: imageUrls.filter((url) => url.startsWith("http")), // Only real URLs
+				imageUrls: imageUrls.filter((url) => url && url.startsWith("http")), // Only real URLs
 			});
 		}
 	};
 
 	return (
 		<Card className="p-6">
-			<h2 className="mb-6 font-bold text-2xl text-foreground">
+			<h2 className="mb-2 font-bold text-2xl text-foreground">
 				{postId ? "Edit Post" : "Share Your Experience"}
 			</h2>
+			<p className="mb-6 text-muted-foreground text-sm">
+				Help others by sharing how a medication worked for you. Include the
+				medication name, your experience, and optionally a rating, experience
+				type, or photos.
+			</p>
 
 			<form onSubmit={handleSubmit} className="space-y-6">
 				{/* Medication Info (if provided) */}

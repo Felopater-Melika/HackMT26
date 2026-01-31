@@ -14,5 +14,5 @@ export default {
 	dbCredentials: {
 		url: databaseUrl,
 	},
-	tablesFilter: ["cliniq_*"],
+	// Removed tablesFilter to allow all tables including social media tables
 } satisfies Config;

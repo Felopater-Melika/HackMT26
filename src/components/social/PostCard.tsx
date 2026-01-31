@@ -160,22 +160,26 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
 				)}
 			</div>
 
-			{/* Medication Info */}
-			{medicationName && (
-				<div className="flex items-center gap-2 text-sm">
-					<span className="font-medium text-foreground">Medication:</span>
-					<span className="text-muted-foreground">{medicationName}</span>
-					{post.rating && (
-						<div className="flex items-center gap-1 ml-2">
+			{/* Medication, Rating & Experience Type */}
+			{(medicationName || post.rating != null || post.experienceType) && (
+				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+					{medicationName && (
+						<span className="flex items-center gap-1.5">
+							<span className="font-medium text-foreground">Medication:</span>
+							<span className="text-muted-foreground">{medicationName}</span>
+						</span>
+					)}
+					{post.rating != null && post.rating > 0 && (
+						<div className="flex items-center gap-1">
 							<Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
 							<span className="font-medium">{post.rating}/5</span>
 						</div>
 					)}
 					{post.experienceType && (
 						<span
-							className={`ml-2 font-medium ${experienceColors[post.experienceType as keyof typeof experienceColors] || ""}`}
+							className={`font-medium ${experienceColors[post.experienceType as keyof typeof experienceColors] || ""}`}
 						>
-							• {experienceLabels[post.experienceType as keyof typeof experienceLabels] || post.experienceType}
+							{experienceLabels[post.experienceType as keyof typeof experienceLabels] || post.experienceType}
 						</span>
 					)}
 				</div>
