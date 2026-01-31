@@ -1,12 +1,18 @@
 import type { Config } from "drizzle-kit";
 
-import { env } from "@/env";
+// For migrations, we only need DATABASE_URL
+// Use process.env directly to avoid full env validation
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+	throw new Error("DATABASE_URL is required for database migrations");
+}
 
 export default {
 	schema: "./src/server/db/schema.ts",
 	dialect: "postgresql",
 	dbCredentials: {
-		url: env.DATABASE_URL,
+		url: databaseUrl,
 	},
 	tablesFilter: ["cliniq_*"],
 } satisfies Config;
