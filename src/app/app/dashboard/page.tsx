@@ -13,6 +13,7 @@ import {
   Plus,
   FileText,
   CheckCircle,
+  Trash2,
 } from 'lucide-react';
 import { MedicationTypeSearch } from '@/components/MedicationTypeSearch';
 import Link from 'next/link';
@@ -78,6 +79,25 @@ export default function DashboardPage() {
       newExpanded.add(reportId);
     }
     setExpandedReports(newExpanded);
+  };
+
+  const { mutate: deleteReport, isPending: isDeletingReport } =
+    api.reports.delete.useMutation({
+      onSuccess: () => {
+        utils.reports.getAll.invalidate();
+        utils.usage.getUsage.invalidate();
+        toast.success('Report deleted successfully');
+      },
+      onError: (err) => {
+        toast.error(err.message ?? 'Failed to delete report');
+      },
+    });
+
+  const handleDeleteReport = (e: React.MouseEvent, reportId: string) => {
+    e.stopPropagation();
+    if (confirm('Are you sure you want to delete this report?')) {
+      deleteReport({ id: reportId });
+    }
   };
 
   return (
@@ -340,6 +360,15 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className='flex items-center gap-2'>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='text-destructive hover:text-destructive hover:bg-destructive/10'
+                        onClick={(e) => handleDeleteReport(e, report.id)}
+                        disabled={isDeletingReport}
+                        title='Delete report'>
+                        <Trash2 className='h-4 w-4' />
+                      </Button>
                       <Button variant='ghost' size='icon'>
                         {isExpanded ? (
                           <ChevronUp className='h-5 w-5' />

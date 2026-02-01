@@ -1,5 +1,6 @@
 import { ocrRouter } from "@/server/api/routers/ocr";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
+import { allergiesRouter } from "./routers/allergies";
 import { conditionsRouter } from "./routers/conditions";
 import { chatRouter } from "./routers/chat";
 import { medicationAnalysisRouter } from "./routers/medication-analysis";
@@ -16,6 +17,7 @@ import { socialRouter } from "./routers/social";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
+	allergies: allergiesRouter,
 	chat: chatRouter,
 	profile: profileRouter,
 	conditions: conditionsRouter,

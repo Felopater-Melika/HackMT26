@@ -1,3 +1,4 @@
+export * from "./schemas/allergies";
 export * from "./schemas/auth";
 export * from "./schemas/conditions";
 export * from "./schemas/medication-deep-dives";

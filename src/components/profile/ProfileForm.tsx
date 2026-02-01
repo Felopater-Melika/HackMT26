@@ -1,5 +1,6 @@
 "use client";
 
+import { AllergiesSelector } from "@/components/AllergiesSelector";
 import { ConditionsSelector } from "@/components/ConditionsSelector";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +44,7 @@ const profileSchema = z.object({
 		.max(120, "Age must be at most 120"),
 	gender: z.string().min(1, "Please select a gender"),
 	conditionIds: z.array(z.string()),
+	allergyIds: z.array(z.string()),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -55,12 +57,15 @@ interface ProfileFormProps {
 export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+	const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
 	const router = useRouter();
 
 	const { data: profile, isLoading: profileLoading } =
 		api.profile.getProfile.useQuery();
 	const { data: userConditions = [], isLoading: conditionsLoading } =
 		api.conditions.getUserConditions.useQuery();
+	const { data: userAllergies = [], isLoading: allergiesLoading } =
+		api.allergies.getUserAllergies.useQuery();
 
 	const utils = api.useUtils();
 	const updateProfile = api.profile.updateProfile.useMutation({
@@ -68,7 +73,8 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 			toast.success("Profile updated successfully!");
 			utils.profile.getProfile.invalidate();
 			utils.conditions.getUserConditions.invalidate();
-			
+			utils.allergies.getUserAllergies.invalidate();
+
 			if (variant === "modal" && onSuccess) {
 				onSuccess();
 			}
@@ -88,6 +94,7 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 			age: 0,
 			gender: "",
 			conditionIds: [],
+			allergyIds: [],
 		},
 	});
 
@@ -99,12 +106,14 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 				age: profile.age || 0,
 				gender: profile.gender || "",
 				conditionIds: userConditions.map((c) => c.id),
+				allergyIds: userAllergies.map((a) => a.id),
 			};
 			console.log("Setting form data:", formData);
 			form.reset(formData);
 			setSelectedConditions(userConditions.map((c) => c.id));
+			setSelectedAllergies(userAllergies.map((a) => a.id));
 		}
-	}, [profile, userConditions, profileLoading, form]);
+	}, [profile, userConditions, userAllergies, profileLoading, form]);
 
 	const onSubmit = async (data: ProfileFormData) => {
 		setIsSubmitting(true);
@@ -114,6 +123,7 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 				age: data.age,
 				gender: data.gender,
 				conditionIds: selectedConditions,
+				allergyIds: selectedAllergies,
 			});
 		} catch (error) {
 			console.error("Error updating profile:", error);
@@ -123,7 +133,7 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 	};
 
 	// Show loading state for both variants
-	const isLoading = profileLoading || conditionsLoading || !profile;
+	const isLoading = profileLoading || conditionsLoading || allergiesLoading || !profile;
 	
 	if (isLoading && variant === "page") {
 		return (
@@ -229,6 +239,15 @@ export function ProfileForm({ onSuccess, variant = "page" }: ProfileFormProps) {
 						selectedConditions={selectedConditions}
 						onSelectionChange={setSelectedConditions}
 						placeholder="Search for conditions..."
+					/>
+				</div>
+
+				<div className="space-y-2">
+					<Label>Medication Allergies</Label>
+					<AllergiesSelector
+						selectedAllergies={selectedAllergies}
+						onSelectionChange={setSelectedAllergies}
+						placeholder="Search for allergies..."
 					/>
 				</div>
 

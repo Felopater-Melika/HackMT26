@@ -1,5 +1,6 @@
 "use client";
 
+import { AllergiesSelector } from "@/components/AllergiesSelector";
 import { ConditionsSelector } from "@/components/ConditionsSelector";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,7 @@ const onboardingSchema = z.object({
 		.max(120, "Age must be at most 120"),
 	gender: z.string().min(1, "Please select a gender"),
 	conditionIds: z.array(z.string()).default([]),
+	allergyIds: z.array(z.string()).default([]),
 });
 
 type OnboardingFormData = z.infer<typeof onboardingSchema>;
@@ -51,6 +53,7 @@ interface OnboardingFormProps {
 export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+	const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
 
 	const createProfile = api.profile.createProfile.useMutation({
 		onSuccess: () => {
@@ -67,6 +70,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 			age: 0,
 			gender: "",
 			conditionIds: [],
+			allergyIds: [],
 		},
 	});
 
@@ -76,6 +80,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 			await createProfile.mutateAsync({
 				...data,
 				conditionIds: selectedConditions,
+				allergyIds: selectedAllergies,
 			});
 		} catch (error) {
 			console.error("Error creating profile:", error);
@@ -153,6 +158,15 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 								selectedConditions={selectedConditions}
 								onSelectionChange={setSelectedConditions}
 								placeholder="Search for conditions..."
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label>Medication Allergies (Optional)</Label>
+							<AllergiesSelector
+								selectedAllergies={selectedAllergies}
+								onSelectionChange={setSelectedAllergies}
+								placeholder="Search for allergies..."
 							/>
 						</div>
 

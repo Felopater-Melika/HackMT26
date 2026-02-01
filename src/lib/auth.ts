@@ -27,6 +27,7 @@ const auth = betterAuth({
 		"http://localhost:3000",
 		"https://cliniq.care",
 		"https://www.cliniq.care",
+		"http://10.82.139.100:3000",
 		"https://cliniq-ijnhdiovn-felopatermelikas-projects.vercel.app",
 		...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
 	],

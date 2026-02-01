@@ -1,5 +1,5 @@
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { user, userConditions, userProfiles } from "@/server/db/schema";
+import { user, userAllergies, userConditions, userProfiles } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -42,6 +42,7 @@ export const profileRouter = createTRPCRouter({
 				age: z.number().min(1).max(120),
 				gender: z.string().min(1),
 				conditionIds: z.array(z.string()).optional().default([]),
+				allergyIds: z.array(z.string()).optional().default([]),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -64,6 +65,16 @@ export const profileRouter = createTRPCRouter({
 				);
 			}
 
+			// Add user allergies if any
+			if (input.allergyIds.length > 0) {
+				await ctx.db.insert(userAllergies).values(
+					input.allergyIds.map((allergyId) => ({
+						userId: ctx.session.user.id,
+						allergyId,
+					})),
+				);
+			}
+
 			return newProfile[0];
 		}),
 
@@ -74,6 +85,7 @@ export const profileRouter = createTRPCRouter({
 				age: z.number().min(1).max(120).optional(),
 				gender: z.string().min(1).optional(),
 				conditionIds: z.array(z.string()).optional(),
+				allergyIds: z.array(z.string()).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -110,6 +122,24 @@ export const profileRouter = createTRPCRouter({
 						input.conditionIds.map((conditionId) => ({
 							userId: ctx.session.user.id,
 							conditionId,
+						})),
+					);
+				}
+			}
+
+			// Update allergies if provided
+			if (input.allergyIds !== undefined) {
+				// Remove all existing allergies
+				await ctx.db
+					.delete(userAllergies)
+					.where(eq(userAllergies.userId, ctx.session.user.id));
+
+				// Add new allergies
+				if (input.allergyIds.length > 0) {
+					await ctx.db.insert(userAllergies).values(
+						input.allergyIds.map((allergyId) => ({
+							userId: ctx.session.user.id,
+							allergyId,
 						})),
 					);
 				}
