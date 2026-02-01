@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
 	AlertCircle,
 	CheckCircle,
-	ChevronDown,
-	ChevronUp,
 	Pill,
 	Clock,
 	Heart,
@@ -45,9 +43,7 @@ export default function MedicationDeepDivePage() {
 			medicationIdFromUrl,
 		);
 
-	const [expandedSections, setExpandedSections] = useState<Set<string>>(
-		new Set(["summary", "warnings", "take"]),
-	);
+	const [activeSection, setActiveSection] = useState<string | null>(null);
 
 	// Query existing deep-dive (only if we have a valid UUID)
 	const { data: existingDeepDives, isLoading: isLoadingExisting } =
@@ -77,14 +73,8 @@ export default function MedicationDeepDivePage() {
 		| { scanLabel: boolean; openFda: boolean; patientProfile: boolean }
 		| null;
 
-	const toggleSection = (section: string) => {
-		const newExpanded = new Set(expandedSections);
-		if (newExpanded.has(section)) {
-			newExpanded.delete(section);
-		} else {
-			newExpanded.add(section);
-		}
-		setExpandedSections(newExpanded);
+	const handleSectionClick = (section: string) => {
+		setActiveSection((current) => (current === section ? null : section));
 	};
 
 	const handleGenerate = () => {
@@ -159,11 +149,222 @@ export default function MedicationDeepDivePage() {
 	const sideEffects = latestDeepDive?.sideEffects as
 		| { common: string[]; serious: string[] }
 		| null;
+	const warningCount = (latestDeepDive?.personalizedWarnings as string[])
+		?.length;
+	const interactionCount = (latestDeepDive?.interactions as string[])?.length;
+
+	const sections = [
+		{
+			key: "treats",
+			title: "What It Treats",
+			icon: <Heart className="h-4 w-4" />,
+			content: (
+				<ul className="space-y-2">
+					{(latestDeepDive?.whatItTreats as string[])?.map(
+						(condition, i) => (
+							<li key={i} className="flex items-start gap-2">
+								<CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+								<span>{condition}</span>
+							</li>
+						),
+					)}
+				</ul>
+			),
+		},
+		{
+			key: "works",
+			title: "How It Works",
+			icon: <Activity className="h-4 w-4" />,
+			content: <p className="leading-relaxed">{latestDeepDive?.howItWorks}</p>,
+		},
+		{
+			key: "take",
+			title: "How To Take",
+			icon: <Clock className="h-4 w-4" />,
+			content: (
+				<div className="space-y-3">
+					<div>
+						<h4 className="mb-1 font-semibold text-sm">Timing</h4>
+						<p className="text-sm">{howToTake?.timing}</p>
+					</div>
+					<div>
+						<h4 className="mb-1 font-semibold text-sm">
+							Food Instructions
+						</h4>
+						<p className="text-sm">{howToTake?.withFood}</p>
+					</div>
+					<div>
+						<h4 className="mb-1 font-semibold text-sm">Missed Dose</h4>
+						<p className="text-sm">{howToTake?.missedDose}</p>
+					</div>
+				</div>
+			),
+		},
+		{
+			key: "timeline",
+			title: "Expected Timeline",
+			icon: <Clock className="h-4 w-4" />,
+			content: (
+				<p className="leading-relaxed">{latestDeepDive?.expectedTimeline}</p>
+			),
+		},
+		{
+			key: "benefits",
+			title: "Benefits",
+			icon: <Heart className="h-4 w-4 text-green-600" />,
+			content: (
+				<ul className="space-y-2">
+					{(latestDeepDive?.benefits as string[])?.map((benefit, i) => (
+						<li key={i} className="flex items-start gap-2">
+							<CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+							<span>{benefit}</span>
+						</li>
+					))}
+				</ul>
+			),
+		},
+		{
+			key: "sideEffects",
+			title: "Side Effects",
+			icon: <AlertCircle className="h-4 w-4 text-yellow-600" />,
+			badge: `${
+				(sideEffects?.common?.length || 0) + (sideEffects?.serious?.length || 0)
+			}`,
+			content: (
+				<div className="space-y-4">
+					<div>
+						<h4 className="mb-2 font-semibold text-sm">Common Side Effects</h4>
+						<ul className="space-y-1">
+							{sideEffects?.common?.map((effect, i) => (
+								<li key={i} className="rounded-md bg-muted px-3 py-2 text-sm">
+									{effect}
+								</li>
+							))}
+						</ul>
+					</div>
+					<div>
+						<h4 className="mb-2 font-semibold text-destructive text-sm">
+							Serious Side Effects
+						</h4>
+						<ul className="space-y-1">
+							{sideEffects?.serious?.map((effect, i) => (
+								<li
+									key={i}
+									className="rounded-md bg-destructive/10 px-3 py-2 text-sm"
+								>
+									{effect}
+								</li>
+							))}
+						</ul>
+					</div>
+				</div>
+			),
+		},
+		{
+			key: "warnings",
+			title: "Personalized Warnings",
+			icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
+			badge: warningCount ? warningCount.toString() : undefined,
+			variant: "warning" as const,
+			content: (
+				<ul className="space-y-2">
+					{(latestDeepDive?.personalizedWarnings as string[])?.map(
+						(warning, i) => (
+							<li
+								key={i}
+								className="rounded-md bg-destructive/10 px-3 py-2 text-sm"
+							>
+								<div className="flex items-start gap-2">
+									<AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" />
+									<span>{warning}</span>
+								</div>
+							</li>
+						),
+					)}
+				</ul>
+			),
+		},
+		{
+			key: "interactions",
+			title: "Interactions",
+			icon: <Users className="h-4 w-4" />,
+			badge: interactionCount ? interactionCount.toString() : undefined,
+			content: (
+				<ul className="space-y-2">
+					{(latestDeepDive?.interactions as string[])?.map(
+						(interaction, i) => (
+							<li
+								key={i}
+								className="rounded-md border bg-card px-3 py-2 text-sm"
+							>
+								{interaction}
+							</li>
+						),
+					)}
+				</ul>
+			),
+		},
+		{
+			key: "lifestyle",
+			title: "Lifestyle Considerations",
+			icon: <Activity className="h-4 w-4" />,
+			content: (
+				<ul className="space-y-2">
+					{(latestDeepDive?.lifestyle as string[])?.map((item, i) => (
+						<li
+							key={i}
+							className="rounded-md border bg-card px-3 py-2 text-sm"
+						>
+							{item}
+						</li>
+					))}
+				</ul>
+			),
+		},
+		{
+			key: "monitoring",
+			title: "What to Monitor",
+			icon: <Activity className="h-4 w-4" />,
+			content: (
+				<ul className="space-y-2">
+					{(latestDeepDive?.monitoring as string[])?.map((item, i) => (
+						<li key={i} className="flex items-start gap-2">
+							<Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+							<span>{item}</span>
+						</li>
+					))}
+				</ul>
+			),
+		},
+		{
+			key: "questions",
+			title: "Questions to Ask Your Doctor",
+			icon: <MessageSquare className="h-4 w-4" />,
+			content: (
+				<ul className="space-y-2">
+					{(latestDeepDive?.questionsToAskDoctor as string[])?.map(
+						(question, i) => (
+							<li
+								key={i}
+								className="rounded-md bg-primary/5 px-3 py-2 text-sm"
+							>
+								<span className="font-semibold">{i + 1}.</span> {question}
+							</li>
+						),
+					)}
+				</ul>
+			),
+		},
+	];
+
+	const activeSectionConfig = sections.find(
+		(section) => section.key === activeSection,
+	);
 
 	return (
 		<div className="min-h-screen bg-background">
 			<Nav />
-			<div className="mx-auto max-w-4xl px-4 py-8">
+			<div className="mx-auto max-w-7xl px-4 py-8">
 				{/* Header */}
 				<div className="mb-6">
 					<div className="mb-2 flex items-center gap-2 text-muted-foreground text-sm">
@@ -237,239 +438,91 @@ export default function MedicationDeepDivePage() {
 					</div>
 				</Card>
 
-				{/* Expandable Sections */}
-				<div className="space-y-3">
-					{/* What It Treats */}
-					<ExpandableSection
-						icon={<Heart className="h-5 w-5" />}
-						title="What It Treats"
-						isExpanded={expandedSections.has("treats")}
-						onToggle={() => toggleSection("treats")}
-					>
-						<ul className="space-y-2">
-							{(latestDeepDive?.whatItTreats as string[])?.map(
-								(condition, i) => (
-									<li key={i} className="flex items-start gap-2">
-										<CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-										<span>{condition}</span>
-									</li>
-								),
-							)}
-						</ul>
-					</ExpandableSection>
+				{/* Section Overview Grid */}
+				<div>
+					<div className="grid grid-flow-col grid-rows-2 gap-3">
+						{sections.map((section) => {
+							const isActive = section.key === activeSection;
+							const isWarning = section.variant === "warning";
 
-					{/* How It Works */}
-					<ExpandableSection
-						icon={<Activity className="h-5 w-5" />}
-						title="How It Works"
-						isExpanded={expandedSections.has("works")}
-						onToggle={() => toggleSection("works")}
-					>
-						<p className="leading-relaxed">{latestDeepDive?.howItWorks}</p>
-					</ExpandableSection>
-
-					{/* How To Take */}
-					<ExpandableSection
-						icon={<Clock className="h-5 w-5" />}
-						title="How To Take"
-						isExpanded={expandedSections.has("take")}
-						onToggle={() => toggleSection("take")}
-					>
-						<div className="space-y-3">
-							<div>
-								<h4 className="mb-1 font-semibold text-sm">Timing</h4>
-								<p className="text-sm">{howToTake?.timing}</p>
-							</div>
-							<div>
-								<h4 className="mb-1 font-semibold text-sm">
-									Food Instructions
-								</h4>
-								<p className="text-sm">{howToTake?.withFood}</p>
-							</div>
-							<div>
-								<h4 className="mb-1 font-semibold text-sm">Missed Dose</h4>
-								<p className="text-sm">{howToTake?.missedDose}</p>
-							</div>
-						</div>
-					</ExpandableSection>
-
-					{/* Expected Timeline */}
-					<ExpandableSection
-						icon={<Clock className="h-5 w-5" />}
-						title="Expected Timeline"
-						isExpanded={expandedSections.has("timeline")}
-						onToggle={() => toggleSection("timeline")}
-					>
-						<p className="leading-relaxed">
-							{latestDeepDive?.expectedTimeline}
-						</p>
-					</ExpandableSection>
-
-					{/* Benefits */}
-					<ExpandableSection
-						icon={<Heart className="h-5 w-5 text-green-600" />}
-						title="Benefits"
-						isExpanded={expandedSections.has("benefits")}
-						onToggle={() => toggleSection("benefits")}
-					>
-						<ul className="space-y-2">
-							{(latestDeepDive?.benefits as string[])?.map((benefit, i) => (
-								<li key={i} className="flex items-start gap-2">
-									<CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-									<span>{benefit}</span>
-								</li>
-							))}
-						</ul>
-					</ExpandableSection>
-
-					{/* Side Effects */}
-					<ExpandableSection
-						icon={<AlertCircle className="h-5 w-5 text-yellow-600" />}
-						title="Side Effects"
-						isExpanded={expandedSections.has("sideEffects")}
-						onToggle={() => toggleSection("sideEffects")}
-						badge={`${(sideEffects?.common?.length || 0) + (sideEffects?.serious?.length || 0)}`}
-					>
-						<div className="space-y-4">
-							<div>
-								<h4 className="mb-2 font-semibold text-sm">
-									Common Side Effects
-								</h4>
-								<ul className="space-y-1">
-									{sideEffects?.common?.map((effect, i) => (
-										<li key={i} className="rounded-md bg-muted px-3 py-2 text-sm">
-											{effect}
-										</li>
-									))}
-								</ul>
-							</div>
-							<div>
-								<h4 className="mb-2 font-semibold text-destructive text-sm">
-									Serious Side Effects
-								</h4>
-								<ul className="space-y-1">
-									{sideEffects?.serious?.map((effect, i) => (
-										<li
-											key={i}
-											className="rounded-md bg-destructive/10 px-3 py-2 text-sm"
-										>
-											{effect}
-										</li>
-									))}
-								</ul>
-							</div>
-						</div>
-					</ExpandableSection>
-
-					{/* Personalized Warnings */}
-					<ExpandableSection
-						icon={<AlertTriangle className="h-5 w-5 text-destructive" />}
-						title="Personalized Warnings"
-						isExpanded={expandedSections.has("warnings")}
-						onToggle={() => toggleSection("warnings")}
-						badge={(
-							latestDeepDive?.personalizedWarnings as string[]
-						)?.length.toString()}
-						variant="warning"
-					>
-						<ul className="space-y-2">
-							{(latestDeepDive?.personalizedWarnings as string[])?.map(
-								(warning, i) => (
-									<li
-										key={i}
-										className="rounded-md bg-destructive/10 px-3 py-2 text-sm"
-									>
-										<div className="flex items-start gap-2">
-											<AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" />
-											<span>{warning}</span>
-										</div>
-									</li>
-								),
-							)}
-						</ul>
-					</ExpandableSection>
-
-					{/* Interactions */}
-					<ExpandableSection
-						icon={<Users className="h-5 w-5" />}
-						title="Interactions"
-						isExpanded={expandedSections.has("interactions")}
-						onToggle={() => toggleSection("interactions")}
-						badge={(
-							latestDeepDive?.interactions as string[]
-						)?.length.toString()}
-					>
-						<ul className="space-y-2">
-							{(latestDeepDive?.interactions as string[])?.map(
-								(interaction, i) => (
-									<li
-										key={i}
-										className="rounded-md border bg-card px-3 py-2 text-sm"
-									>
-										{interaction}
-									</li>
-								),
-							)}
-						</ul>
-					</ExpandableSection>
-
-					{/* Lifestyle Considerations */}
-					<ExpandableSection
-						icon={<Activity className="h-5 w-5" />}
-						title="Lifestyle Considerations"
-						isExpanded={expandedSections.has("lifestyle")}
-						onToggle={() => toggleSection("lifestyle")}
-					>
-						<ul className="space-y-2">
-							{(latestDeepDive?.lifestyle as string[])?.map((item, i) => (
-								<li
-									key={i}
-									className="rounded-md border bg-card px-3 py-2 text-sm"
+							return (
+								<button
+									key={section.key}
+									type="button"
+									onClick={() => handleSectionClick(section.key)}
+									className="min-w-[180px] text-left"
+									aria-expanded={isActive}
 								>
-									{item}
-								</li>
-							))}
-						</ul>
-					</ExpandableSection>
-
-					{/* Monitoring */}
-					<ExpandableSection
-						icon={<Activity className="h-5 w-5" />}
-						title="What to Monitor"
-						isExpanded={expandedSections.has("monitoring")}
-						onToggle={() => toggleSection("monitoring")}
-					>
-						<ul className="space-y-2">
-							{(latestDeepDive?.monitoring as string[])?.map((item, i) => (
-								<li key={i} className="flex items-start gap-2">
-									<Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-									<span>{item}</span>
-								</li>
-							))}
-						</ul>
-					</ExpandableSection>
-
-					{/* Questions for Doctor */}
-					<ExpandableSection
-						icon={<MessageSquare className="h-5 w-5" />}
-						title="Questions to Ask Your Doctor"
-						isExpanded={expandedSections.has("questions")}
-						onToggle={() => toggleSection("questions")}
-					>
-						<ul className="space-y-2">
-							{(latestDeepDive?.questionsToAskDoctor as string[])?.map(
-								(question, i) => (
-									<li
-										key={i}
-										className="rounded-md bg-primary/5 px-3 py-2 text-sm"
+									<Card
+										className={`h-full border p-3 transition ${
+											isWarning
+												? "border-destructive/30 bg-destructive/5"
+												: ""
+										} ${isActive ? "border-primary/60 bg-primary/5" : ""}`}
 									>
-										<span className="font-semibold">{i + 1}.</span> {question}
-									</li>
-								),
-							)}
-						</ul>
-					</ExpandableSection>
+										<div className="flex items-center justify-between gap-2">
+											<div className="flex items-center gap-2">
+												{section.icon}
+												<h3 className="font-semibold text-sm">
+													{section.title}
+												</h3>
+												{section.badge && (
+													<span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs">
+														{section.badge}
+													</span>
+												)}
+											</div>
+											<ChevronRight
+												className={`h-4 w-4 transition ${
+													isActive ? "rotate-90 text-primary" : ""
+												}`}
+											/>
+										</div>
+										<p className="mt-2 text-muted-foreground text-xs">
+											{isActive ? "Selected" : "Tap to view"}
+										</p>
+									</Card>
+								</button>
+							);
+						})}
+					</div>
 				</div>
+
+				{/* Active Section Content */}
+				<Card
+					className={`mt-4 border ${activeSectionConfig?.variant === "warning" ? "border-destructive/30 bg-destructive/5" : ""}`}
+				>
+					{activeSectionConfig ? (
+						<>
+							<div className="flex items-center justify-between border-b p-4">
+								<div className="flex items-center gap-2">
+									{activeSectionConfig.icon}
+									<h3 className="font-semibold text-base">
+										{activeSectionConfig.title}
+									</h3>
+									{activeSectionConfig.badge && (
+										<span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs">
+											{activeSectionConfig.badge}
+										</span>
+									)}
+								</div>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onClick={() => setActiveSection(null)}
+								>
+									Close
+								</Button>
+							</div>
+							<div className="p-4">{activeSectionConfig.content}</div>
+						</>
+					) : (
+						<div className="p-4 text-muted-foreground text-sm">
+							Select a section above to view details.
+						</div>
+					)}
+				</Card>
 
 				{/* Disclaimer */}
 				<Card className="mt-6 border bg-muted p-4">
@@ -502,51 +555,3 @@ export default function MedicationDeepDivePage() {
 /**
  * Reusable expandable section component
  */
-interface ExpandableSectionProps {
-	icon: React.ReactNode;
-	title: string;
-	isExpanded: boolean;
-	onToggle: () => void;
-	children: React.ReactNode;
-	badge?: string;
-	variant?: "default" | "warning";
-}
-
-function ExpandableSection({
-	icon,
-	title,
-	isExpanded,
-	onToggle,
-	children,
-	badge,
-	variant = "default",
-}: ExpandableSectionProps) {
-	return (
-		<Card
-			className={`border ${variant === "warning" ? "border-destructive/30 bg-destructive/5" : ""}`}
-		>
-			<div
-				className="flex cursor-pointer items-center justify-between p-4 hover:bg-accent/50"
-				onClick={onToggle}
-			>
-				<div className="flex items-center gap-2">
-					{icon}
-					<h3 className="font-semibold">{title}</h3>
-					{badge && (
-						<span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs">
-							{badge}
-						</span>
-					)}
-				</div>
-				<Button variant="ghost" size="icon">
-					{isExpanded ? (
-						<ChevronUp className="h-5 w-5" />
-					) : (
-						<ChevronDown className="h-5 w-5" />
-					)}
-				</Button>
-			</div>
-			{isExpanded && <div className="border-t p-4">{children}</div>}
-		</Card>
-	);
-}

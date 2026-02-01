@@ -71,3 +71,4 @@ export const medicationDeepDives = createTable(
 		).on(t.userId, t.medicationId),
 	}),
 );
+4
