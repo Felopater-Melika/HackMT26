@@ -37,7 +37,6 @@ export interface DeepDiveGenerationResult {
 	inputsHash: string;
 	openfdaDataHash?: string;
 	rawResponse: string;
-	tokensUsed?: number;
 	latencyMs: number;
 	error?: string;
 }

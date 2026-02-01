@@ -55,7 +55,6 @@ export const medicationDeepDives = createTable(
 		rawLlmResponse: text("raw_llm_response"),
 		aiModel: text("ai_model"),
 		temperature: numeric("temperature"),
-		tokensUsed: integer("tokens_used"),
 		latencyMs: integer("latency_ms"),
 		createdAt: timestamp("created_at").defaultNow(),
 		updatedAt: timestamp("updated_at").defaultNow(),

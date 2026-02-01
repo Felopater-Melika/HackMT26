@@ -606,12 +606,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "tokens_used": {
-          "name": "tokens_used",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "latency_ms": {
           "name": "latency_ms",
           "type": "integer",

@@ -180,7 +180,6 @@ export const medicationDeepDiveRouter = createTRPCRouter({
 					rawLlmResponse: result.rawResponse,
 					aiModel: "gpt-4",
 					temperature: "0.2",
-					tokensUsed: result.tokensUsed,
 					latencyMs: result.latencyMs,
 				})
 				.returning();
