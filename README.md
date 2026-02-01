@@ -43,6 +43,7 @@ Cliniq Care enables users to scan medication labels, analyze drug interactions, 
 - **Dashboard**
   - View past medication analysis reports
   - Detailed medication insights
+  - Generate pdf reports
   - Delete reports
 
 - **SEO**
