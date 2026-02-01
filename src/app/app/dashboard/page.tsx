@@ -3,6 +3,8 @@
 import { Nav } from "@/components/Nav";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+// new component
+import { DownloadReportButton } from "@/components/DowloadReportButton";
 import {
 	AlertCircle,
 	Calendar,
@@ -14,7 +16,7 @@ import {
 import Link from "next/link";
 import { api } from "@/trpc/react";
 import { useState } from "react";
-import { toast } from "sonner";
+
 
 export default function DashboardPage() {
 	const { data: reports, isLoading } = api.reports.getAll.useQuery();
@@ -67,6 +69,7 @@ export default function DashboardPage() {
 											? "You've reached your limit"
 											: `${usage.remaining} scan${usage.remaining !== 1 ? "s" : ""} remaining`}
 									</p>
+									<DownloadReportButton reportId={reports?.[0]?.id || ""} />
 								</div>
 								<div className="text-right">
 									<div
@@ -331,6 +334,7 @@ export default function DashboardPage() {
 													medical advice.
 												</p>
 											</Card>
+	
 										</div>
 									)}
 								</Card>
