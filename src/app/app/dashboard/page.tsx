@@ -3,14 +3,17 @@
 import { Nav } from "@/components/Nav";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
 	AlertCircle,
 	Calendar,
 	ChevronDown,
 	ChevronUp,
+	Loader2,
 	Pill,
 	Plus,
 } from "lucide-react";
+import { MedicationTypeSearch } from "@/components/MedicationTypeSearch";
 import Link from "next/link";
 import { api } from "@/trpc/react";
 import { useState } from "react";
@@ -19,10 +22,25 @@ import { toast } from "sonner";
 export default function DashboardPage() {
 	const { data: reports, isLoading } = api.reports.getAll.useQuery();
 	const { data: usage } = api.usage.getUsage.useQuery();
+	const utils = api.useUtils();
 
 	const [expandedReports, setExpandedReports] = useState<Set<string>>(
 		new Set(),
 	);
+
+	const { mutate: analyzeMedication, isPending: isSearching, data: searchResult } =
+		api.medications.analyze.useMutation({
+			onSuccess: (data) => {
+				utils.reports.getAll.invalidate();
+				toast.success("Analysis complete. Report saved to your history.");
+				if (data.reportId) {
+					setExpandedReports((prev) => new Set(prev).add(data.reportId as string));
+				}
+			},
+			onError: (err) => {
+				toast.error(err.message ?? "Analysis failed");
+			},
+		});
 
 	const toggleReport = (reportId: string) => {
 		const newExpanded = new Set(expandedReports);
@@ -52,6 +70,146 @@ export default function DashboardPage() {
 						</Button>
 					</Link>
 				</div>
+
+				{/* Type Medication Search Bar */}
+				<Card className="mb-6 border">
+					<div className="p-4">
+						<MedicationTypeSearch
+							onSelect={(name) =>
+								analyzeMedication({
+									medications: [
+										{ name, dosage: null, measurement: null, ocrLines: [] },
+									],
+								})
+							}
+							placeholder="e.g. aspirin, metformin, ibuprofen"
+							submitLabel="Analyze"
+							disabled={usage?.hasReachedLimit}
+							isPending={isSearching}
+							mode="analyze"
+						/>
+						{usage?.hasReachedLimit && (
+							<p className="mt-2 text-destructive text-xs">
+								You've reached your scan limit. Upgrade to search more.
+							</p>
+						)}
+					</div>
+				</Card>
+
+				{/* Search result (same format as scan report) */}
+				{searchResult?.individualResults?.length > 0 && (
+					<Card className="mb-6 border-2 border-primary/20">
+						<div className="border-b p-4">
+							<h3 className="font-semibold text-foreground">
+								Search result: {searchResult.individualResults[0]?.medicationName}
+							</h3>
+							<p className="text-muted-foreground text-sm">
+								This report has been saved to your history below.
+							</p>
+						</div>
+						<div className="p-6">
+							{searchResult.individualResults.map((med: any, index: number) => (
+								<Card key={index} className="border bg-card p-4">
+									<div className="mb-3 flex items-start justify-between">
+										<div>
+											<h5 className="font-semibold text-foreground">
+												{med.medicationName}
+											</h5>
+											{med.dosage != null && med.measurement && (
+												<p className="text-muted-foreground text-sm">
+													{med.dosage} {med.measurement}
+												</p>
+											)}
+										</div>
+										{med.success && (
+											<div className="text-right">
+												<div className="font-bold text-2xl text-foreground">
+													{med.safetyScore}
+												</div>
+												<div className="text-muted-foreground text-xs">
+													Safety Score
+												</div>
+											</div>
+										)}
+									</div>
+									{med.success ? (
+										<>
+											{med.summary && (
+												<div className="mb-3 rounded-md bg-muted p-3">
+													<p className="text-sm leading-relaxed">
+														{med.summary}
+													</p>
+												</div>
+											)}
+											{med.warnings?.length > 0 && (
+												<div className="mb-3">
+													<h6 className="mb-2 flex items-center gap-2 font-semibold text-sm">
+														<AlertCircle className="h-4 w-4" />
+														Warnings
+													</h6>
+													<ul className="space-y-1">
+														{med.warnings.map((warning: string, i: number) => (
+															<li
+																key={i}
+																className="rounded-md border bg-card px-3 py-2 text-sm"
+															>
+																{warning}
+															</li>
+														))}
+													</ul>
+												</div>
+											)}
+											{med.interactions?.length > 0 && (
+												<div className="mb-3">
+													<h6 className="mb-2 font-semibold text-sm">
+														Potential Interactions
+													</h6>
+													<ul className="space-y-1">
+														{med.interactions.map(
+															(int: string, i: number) => (
+																<li
+																	key={i}
+																	className="rounded-md border bg-card px-3 py-2 text-sm"
+																>
+																	{int}
+																</li>
+															),
+														)}
+													</ul>
+												</div>
+											)}
+											{med.recommendations?.length > 0 && (
+												<div>
+													<h6 className="mb-2 font-semibold text-sm">
+														Recommendations
+													</h6>
+													<ul className="space-y-1">
+														{med.recommendations.map(
+															(rec: string, i: number) => (
+																<li
+																	key={i}
+																	className="rounded-md border bg-card px-3 py-2 text-sm"
+																>
+																	{rec}
+																</li>
+															),
+														)}
+													</ul>
+												</div>
+											)}
+										</>
+									) : (
+										<div className="rounded-md bg-destructive/10 p-3">
+											<p className="font-medium text-destructive text-sm">
+												Analysis Failed: {med.error}
+											</p>
+										</div>
+									)}
+								</Card>
+							))}
+						</div>
+					</Card>
+				)}
 
 				{/* Usage Card */}
 				{usage && (
