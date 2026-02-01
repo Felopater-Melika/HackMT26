@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
   "id": "9729d7c0-e7f8-4db8-af13-7fcc530be6e0",
-=======
-  "id": "81cf93d0-6c8f-4d9b-a3da-ae892edbed3e",
->>>>>>> darshan_profile
   "prevId": "e397d05b-ed2d-45d6-a72a-faa370ed285a",
   "version": "7",
   "dialect": "postgresql",
@@ -461,7 +457,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-<<<<<<< HEAD
     "public.medication_deep_dives": {
       "name": "medication_deep_dives",
       "schema": "",
@@ -702,8 +697,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-=======
->>>>>>> darshan_profile
     "public.medication_stats": {
       "name": "medication_stats",
       "schema": "",
@@ -868,15 +861,12 @@
           "primaryKey": false,
           "notNull": false
         },
-<<<<<<< HEAD
         "medication_label": {
           "name": "medication_label",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
-=======
->>>>>>> darshan_profile
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1782,8 +1772,6 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
-<<<<<<< HEAD
-=======
     },
     "public.medication_ratings": {
       "name": "medication_ratings",
@@ -2628,7 +2616,6 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
->>>>>>> darshan_profile
     }
   },
   "enums": {},
