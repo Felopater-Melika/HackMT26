@@ -1,12 +1,39 @@
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { z } from "zod";
 import { createMedicationAnalyzer } from "@/lib/medication-analyzer";
-import { reports, scans, scanMedications, medications as medicationsTable } from "@/server/db/schema";
+import { reports, scans, scanMedications, medications as medicationsTable, userMedications } from "@/server/db/schema";
 import { eq, count } from "drizzle-orm";
 
 const MAX_SCANS_PER_USER = 3;
 
 export const medicationsRouter = createTRPCRouter({
+	/**
+	 * Get all medications for the current user
+	 *
+	 * Returns all medications linked to the user via user_medications,
+	 * including the medication details.
+	 */
+	getUserMedications: protectedProcedure.query(async ({ ctx }) => {
+		const meds = await ctx.db
+			.select({
+				medicationId: userMedications.medicationId,
+				addedFromScan: userMedications.addedFromScan,
+				dosage: userMedications.dosage,
+				frequency: userMedications.frequency,
+				medicationLabel: userMedications.medicationLabel,
+				createdAt: userMedications.createdAt,
+				medication: medicationsTable,
+			})
+			.from(userMedications)
+			.leftJoin(
+				medicationsTable,
+				eq(userMedications.medicationId, medicationsTable.id),
+			)
+			.where(eq(userMedications.userId, ctx.session.user.id));
+
+		return meds;
+	}),
+
 	analyze: protectedProcedure
 		.input(
 			z.object({
