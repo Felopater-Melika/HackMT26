@@ -12,8 +12,8 @@ import {
 	Loader2,
 	Pill,
 	Plus,
-	Search,
 } from "lucide-react";
+import { MedicationTypeSearch } from "@/components/MedicationTypeSearch";
 import Link from "next/link";
 import { api } from "@/trpc/react";
 import { useState } from "react";
@@ -24,7 +24,6 @@ export default function DashboardPage() {
 	const { data: usage } = api.usage.getUsage.useQuery();
 	const utils = api.useUtils();
 
-	const [searchQuery, setSearchQuery] = useState("");
 	const [expandedReports, setExpandedReports] = useState<Set<string>>(
 		new Set(),
 	);
@@ -42,16 +41,6 @@ export default function DashboardPage() {
 				toast.error(err.message ?? "Analysis failed");
 			},
 		});
-
-	const handleSearch = () => {
-		const trimmed = searchQuery.trim();
-		if (!trimmed) return;
-		analyzeMedication({
-			medications: [
-				{ name: trimmed, dosage: null, measurement: null, ocrLines: [] },
-			],
-		});
-	};
 
 	const toggleReport = (reportId: string) => {
 		const newExpanded = new Set(expandedReports);
@@ -82,49 +71,23 @@ export default function DashboardPage() {
 					</Link>
 				</div>
 
-				{/* Medication Search Bar */}
+				{/* Type Medication Search Bar */}
 				<Card className="mb-6 border">
 					<div className="p-4">
-						<h3 className="mb-2 font-semibold text-foreground text-sm">
-							Search medication by name
-						</h3>
-						<p className="mb-3 text-muted-foreground text-sm">
-							Get the same AI analysis as a scan—safety score, warnings,
-							interactions, and recommendations.
-						</p>
-						<div className="flex gap-2">
-							<Input
-								type="text"
-								placeholder="e.g. aspirin, metformin, ibuprofen"
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") handleSearch();
-								}}
-								disabled={isSearching || usage?.hasReachedLimit}
-								className="flex-1"
-							/>
-							<Button
-								onClick={handleSearch}
-								disabled={
-									isSearching ||
-									!searchQuery.trim() ||
-									usage?.hasReachedLimit
-								}
-							>
-								{isSearching ? (
-									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Analyzing...
-									</>
-								) : (
-									<>
-										<Search className="mr-2 h-4 w-4" />
-										Search
-									</>
-								)}
-							</Button>
-						</div>
+						<MedicationTypeSearch
+							onSelect={(name) =>
+								analyzeMedication({
+									medications: [
+										{ name, dosage: null, measurement: null, ocrLines: [] },
+									],
+								})
+							}
+							placeholder="e.g. aspirin, metformin, ibuprofen"
+							submitLabel="Analyze"
+							disabled={usage?.hasReachedLimit}
+							isPending={isSearching}
+							mode="analyze"
+						/>
 						{usage?.hasReachedLimit && (
 							<p className="mt-2 text-destructive text-xs">
 								You've reached your scan limit. Upgrade to search more.
