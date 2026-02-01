@@ -16,6 +16,177 @@ import { api } from "@/trpc/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+// Medication category helper
+function getMedicationCategory(medicationName: string): {
+	category: string;
+	color: string;
+	bgColor: string;
+	emoji: string;
+} {
+	const name = medicationName.toLowerCase();
+
+	// Pain Relief
+	if (
+		name.includes("ibuprofen") ||
+		name.includes("aspirin") ||
+		name.includes("acetaminophen") ||
+		name.includes("tylenol") ||
+		name.includes("advil") ||
+		name.includes("naproxen") ||
+		name.includes("aleve") ||
+		name.includes("tramadol") ||
+		name.includes("morphine") ||
+		name.includes("oxycodone")
+	) {
+		return {
+			category: "Pain Relief",
+			color: "text-red-700",
+			bgColor: "bg-red-100 border-red-200",
+			emoji: "💊",
+		};
+	}
+
+	// Heart/Blood Pressure
+	if (
+		name.includes("lisinopril") ||
+		name.includes("amlodipine") ||
+		name.includes("atenolol") ||
+		name.includes("metoprolol") ||
+		name.includes("losartan") ||
+		name.includes("carvedilol") ||
+		name.includes("warfarin") ||
+		name.includes("clopidogrel") ||
+		name.includes("plavix") ||
+		name.includes("statin") ||
+		name.includes("atorvastatin") ||
+		name.includes("simvastatin")
+	) {
+		return {
+			category: "Heart & Blood Pressure",
+			color: "text-blue-700",
+			bgColor: "bg-blue-100 border-blue-200",
+			emoji: "💙",
+		};
+	}
+
+	// Diabetes
+	if (
+		name.includes("metformin") ||
+		name.includes("insulin") ||
+		name.includes("glipizide") ||
+		name.includes("glyburide") ||
+		name.includes("januvia") ||
+		name.includes("ozempic") ||
+		name.includes("trulicity")
+	) {
+		return {
+			category: "Diabetes",
+			color: "text-amber-700",
+			bgColor: "bg-amber-100 border-amber-200",
+			emoji: "🍬",
+		};
+	}
+
+	// Mental Health
+	if (
+		name.includes("sertraline") ||
+		name.includes("zoloft") ||
+		name.includes("prozac") ||
+		name.includes("fluoxetine") ||
+		name.includes("lexapro") ||
+		name.includes("escitalopram") ||
+		name.includes("xanax") ||
+		name.includes("alprazolam") ||
+		name.includes("lorazepam") ||
+		name.includes("ativan") ||
+		name.includes("wellbutrin") ||
+		name.includes("bupropion")
+	) {
+		return {
+			category: "Mental Health",
+			color: "text-purple-700",
+			bgColor: "bg-purple-100 border-purple-200",
+			emoji: "🧠",
+		};
+	}
+
+	// Antibiotics
+	if (
+		name.includes("amoxicillin") ||
+		name.includes("azithromycin") ||
+		name.includes("ciprofloxacin") ||
+		name.includes("doxycycline") ||
+		name.includes("penicillin") ||
+		name.includes("cephalexin") ||
+		name.includes("clindamycin") ||
+		name.includes("antibiotic")
+	) {
+		return {
+			category: "Antibiotic",
+			color: "text-green-700",
+			bgColor: "bg-green-100 border-green-200",
+			emoji: "🦠",
+		};
+	}
+
+	// Respiratory/Asthma
+	if (
+		name.includes("albuterol") ||
+		name.includes("inhaler") ||
+		name.includes("montelukast") ||
+		name.includes("singulair") ||
+		name.includes("fluticasone") ||
+		name.includes("prednisone")
+	) {
+		return {
+			category: "Respiratory",
+			color: "text-cyan-700",
+			bgColor: "bg-cyan-100 border-cyan-200",
+			emoji: "🫁",
+		};
+	}
+
+	// Stomach/Digestive
+	if (
+		name.includes("omeprazole") ||
+		name.includes("pantoprazole") ||
+		name.includes("ranitidine") ||
+		name.includes("famotidine") ||
+		name.includes("pepcid") ||
+		name.includes("prilosec") ||
+		name.includes("nexium")
+	) {
+		return {
+			category: "Digestive",
+			color: "text-orange-700",
+			bgColor: "bg-orange-100 border-orange-200",
+			emoji: "🔥",
+		};
+	}
+
+	// Thyroid
+	if (
+		name.includes("levothyroxine") ||
+		name.includes("synthroid") ||
+		name.includes("thyroid")
+	) {
+		return {
+			category: "Thyroid",
+			color: "text-pink-700",
+			bgColor: "bg-pink-100 border-pink-200",
+			emoji: "⚡",
+		};
+	}
+
+	// Default/Other
+	return {
+		category: "Other",
+		color: "text-gray-700",
+		bgColor: "bg-gray-100 border-gray-200",
+		emoji: "💊",
+	};
+}
+
 export default function DashboardPage() {
 	const { data: reports, isLoading } = api.reports.getAll.useQuery();
 	const { data: usage } = api.usage.getUsage.useQuery();
@@ -176,92 +347,105 @@ export default function DashboardPage() {
 												</h4>
 
 												{analysisData?.individualResults?.map(
-													(med: any, index: number) => (
-														<Card key={index} className="border bg-card p-4">
-															<div className="mb-3 flex items-start justify-between">
-																<div>
-																	<h5 className="font-semibold text-foreground">
-																		{med.medicationName}
-																	</h5>
-																	{med.dosage && med.measurement && (
-																		<p className="text-muted-foreground text-sm">
-																			{med.dosage} {med.measurement}
-																		</p>
+													(med: any, index: number) => {
+														const category = getMedicationCategory(
+															med.medicationName,
+														);
+														return (
+															<Card key={index} className="border bg-card p-4">
+																<div className="mb-3 flex items-start justify-between">
+																	<div className="flex-1">
+																		<div className="mb-2 flex items-center gap-2">
+																			<h5 className="font-semibold text-foreground">
+																				{med.medicationName}
+																			</h5>
+																			<span
+																				className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${category.bgColor} ${category.color}`}
+																			>
+																				<span>{category.emoji}</span>
+																				<span>{category.category}</span>
+																			</span>
+																		</div>
+																		{med.dosage && med.measurement && (
+																			<p className="text-muted-foreground text-sm">
+																				{med.dosage} {med.measurement}
+																			</p>
+																		)}
+																	</div>
+																	{med.success && (
+																		<div className="text-right">
+																			<div className="font-bold text-2xl text-foreground">
+																				{med.safetyScore}
+																			</div>
+																			<div className="text-muted-foreground text-xs">
+																				Safety Score
+																			</div>
+																		</div>
 																	)}
 																</div>
-																{med.success && (
-																	<div className="text-right">
-																		<div className="font-bold text-2xl text-foreground">
-																			{med.safetyScore}
-																		</div>
-																		<div className="text-muted-foreground text-xs">
-																			Safety Score
-																		</div>
-																	</div>
-																)}
-															</div>
 
-															{med.success ? (
-																<>
-																	{med.summary && (
-																		<div className="mb-3 rounded-md bg-muted p-3">
-																			<p className="text-sm leading-relaxed">
-																				{med.summary}
-																			</p>
-																		</div>
-																	)}
+																{med.success ? (
+																	<>
+																		{med.summary && (
+																			<div className="mb-3 rounded-md bg-muted p-3">
+																				<p className="text-sm leading-relaxed">
+																					{med.summary}
+																				</p>
+																			</div>
+																		)}
 
-																	{med.warnings && med.warnings.length > 0 && (
-																		<div className="mb-3">
-																			<h6 className="mb-2 flex items-center gap-2 font-semibold text-sm">
-																				<AlertCircle className="h-4 w-4" />
-																				Warnings
-																			</h6>
-																			<ul className="space-y-1">
-																				{med.warnings.map(
-																					(warning: string, i: number) => (
-																						<li
-																							key={i}
-																							className="rounded-md border bg-card px-3 py-2 text-sm"
-																						>
-																							{warning}
-																						</li>
-																					),
-																				)}
-																			</ul>
-																		</div>
-																	)}
-
-																	{med.recommendations &&
-																		med.recommendations.length > 0 && (
-																			<div>
-																				<h6 className="mb-2 font-semibold text-sm">
-																					Recommendations
+																		{med.warnings && med.warnings.length > 0 && (
+																			<div className="mb-3">
+																				<h6 className="mb-2 flex items-center gap-2 font-semibold text-sm">
+																					<AlertCircle className="h-4 w-4" />
+																					Warnings
 																				</h6>
 																				<ul className="space-y-1">
-																					{med.recommendations.map(
-																						(rec: string, i: number) => (
+																					{med.warnings.map(
+																						(warning: string, i: number) => (
 																							<li
 																								key={i}
 																								className="rounded-md border bg-card px-3 py-2 text-sm"
 																							>
-																								{rec}
+																								{warning}
 																							</li>
 																						),
 																					)}
 																				</ul>
 																			</div>
 																		)}
-																</>
-															) : (
-																<div className="rounded-md bg-destructive/10 p-3">
-																	<p className="font-medium text-destructive text-sm">
-																		Analysis Failed: {med.error}
-																	</p>
-																</div>
-															)}
-														</Card>
-													),
+
+																		{med.recommendations &&
+																			med.recommendations.length > 0 && (
+																				<div>
+																					<h6 className="mb-2 font-semibold text-sm">
+																						Recommendations
+																					</h6>
+																					<ul className="space-y-1">
+																						{med.recommendations.map(
+																							(rec: string, i: number) => (
+																								<li
+																									key={i}
+																									className="rounded-md border bg-card px-3 py-2 text-sm"
+																								>
+																									{rec}
+																								</li>
+																							),
+																						)}
+																					</ul>
+																				</div>
+																			)}
+																	</>
+																) : (
+																	<div className="rounded-md bg-destructive/10 p-3">
+																		<p className="font-medium text-destructive text-sm">
+																			Analysis Failed: {med.error}
+																		</p>
+																	</div>
+																)}
+															</Card>
+														);
+													},
 												)}
 											</div>
 
