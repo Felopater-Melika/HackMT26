@@ -11,6 +11,8 @@ import {
   User,
   MessageSquare,
   Pill,
+  Network,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -75,7 +77,9 @@ export function Nav() {
   const navItems = [
     { href: '/app/scan', label: 'Scan', icon: Scan },
     { href: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/app/medications', label: 'My Medications', icon: Pill },
+    { href: '/app/medications', label: 'My Meds', icon: Pill },
+    { href: '/app/interactions', label: 'Interactions', icon: Network },
+    { href: '/app/insights', label: 'Insights', icon: BarChart3 },
     { href: '/app/social', label: 'Community', icon: MessageSquare },
     { href: '/app/profile', label: 'Profile', icon: User },
   ];
