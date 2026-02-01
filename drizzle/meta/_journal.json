@@ -22,6 +22,13 @@
       "when": 1767798555167,
       "tag": "0002_demonic_next_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769916343489,
+      "tag": "0003_mighty_screwball",
+      "breakpoints": true
     }
   ]
 }

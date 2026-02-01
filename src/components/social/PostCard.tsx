@@ -11,7 +11,6 @@ import {
 	MoreVertical,
 	Trash2,
 	Edit,
-	Image as ImageIcon,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
@@ -30,7 +29,6 @@ interface PostCardProps {
 		content: string;
 		rating?: number | null;
 		experienceType?: string | null;
-		medicationName?: string | null;
 		medication?: {
 			id: string;
 			name: string | null;
@@ -76,7 +74,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
 
 	const isOwner = currentUserId === post.userId;
 	const medicationName =
-		post.medication?.name || post.medication?.brandName || post.medicationName;
+		post.medication?.name || post.medication?.brandName || null;
 
 	const experienceColors = {
 		positive: "text-green-600",
@@ -190,33 +188,6 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
 
 			{/* Content */}
 			<p className="text-foreground whitespace-pre-wrap">{post.content}</p>
-
-			{/* Images */}
-			{post.images.length > 0 && (
-				<div
-					className={`grid gap-2 ${
-						post.images.length === 1
-							? "grid-cols-1"
-							: post.images.length === 2
-								? "grid-cols-2"
-								: "grid-cols-2"
-					}`}
-				>
-					{post.images.map((img) => (
-						<div
-							key={img.id}
-							className="relative aspect-square rounded-lg overflow-hidden bg-muted"
-						>
-							<Image
-								src={img.imageUrl}
-								alt="Post image"
-								fill
-								className="object-cover"
-							/>
-						</div>
-					))}
-				</div>
-			)}
 
 			{/* Actions */}
 			<div className="flex items-center gap-6 pt-2 border-t">

@@ -14,13 +14,14 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/trpc/react";
-import { Star, X, Upload, Loader2 } from "lucide-react";
+import { Star, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { toast } from "sonner";
 
 interface PostFormProps {
+	/** Required when creating a post (community feature requires a medication). */
 	medicationId?: string;
+	/** Optional display label when creating (e.g. from URL); not sent to API. */
 	medicationName?: string;
 	postId?: string; // For editing
 	onSuccess?: () => void;
@@ -37,13 +38,25 @@ export function PostForm({
 
 	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
+	const [selectedMedicationId, setSelectedMedicationId] = useState<string>(
+		medicationId ?? "",
+	);
 	const [rating, setRating] = useState<number | undefined>();
 	const [experienceType, setExperienceType] = useState<
 		"positive" | "negative" | "neutral" | "side_effects" | undefined
 	>();
 	const [isPublic, setIsPublic] = useState(true);
-	const [imageUrls, setImageUrls] = useState<string[]>([]);
-	const [uploading, setUploading] = useState(false);
+
+	// Sync prop into state when URL has medicationId
+	React.useEffect(() => {
+		if (medicationId) setSelectedMedicationId(medicationId);
+	}, [medicationId]);
+
+	// Load current user's medications for dropdown (when creating)
+	const { data: myMedications } = api.social.getMyMedications.useQuery(
+		undefined,
+		{ enabled: !postId },
+	);
 
 	// Load existing post data if editing
 	const { data: existingPost } = api.social.getPost.useQuery(
@@ -61,7 +74,6 @@ export function PostForm({
 				(existingPost.experienceType as typeof experienceType) || undefined,
 			);
 			setIsPublic(existingPost.isPublic);
-			setImageUrls(existingPost.images.map((img) => img.imageUrl));
 		}
 	}, [existingPost, postId]);
 
@@ -94,28 +106,6 @@ export function PostForm({
 			},
 		});
 
-	const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const files = e.target.files;
-		if (!files || files.length === 0) return;
-
-		setUploading(true);
-		// TODO: Implement actual image upload (UploadThing or similar)
-		// For now, we'll use a placeholder
-		// In production, you'd upload to UploadThing and get URLs
-		const newUrls: string[] = [];
-		for (const file of Array.from(files)) {
-			// Create a temporary URL for preview
-			const url = URL.createObjectURL(file);
-			newUrls.push(url);
-		}
-		setImageUrls([...imageUrls, ...newUrls].slice(0, 5));
-		setUploading(false);
-	};
-
-	const removeImage = (index: number) => {
-		setImageUrls(imageUrls.filter((_, i) => i !== index));
-	};
-
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!title.trim() || !content.trim()) return;
@@ -130,15 +120,18 @@ export function PostForm({
 				isPublic,
 			});
 		} else {
+			if (!selectedMedicationId) {
+				toast.error("Please select a medication to share an experience.");
+				return;
+			}
 			createPost({
-				medicationId: medicationId || undefined,
-				medicationName: initialMedicationName || undefined,
+				medicationId: selectedMedicationId,
 				title: title.trim(),
 				content: content.trim(),
 				rating: rating || undefined,
 				experienceType: experienceType || undefined,
 				isPublic,
-				imageUrls: imageUrls.filter((url) => url && url.startsWith("http")), // Only real URLs
+				// Fix: Remove imageUrls property, since it's not supported by the type
 			});
 		}
 	};
@@ -150,17 +143,50 @@ export function PostForm({
 			</h2>
 			<p className="mb-6 text-muted-foreground text-sm">
 				Help others by sharing how a medication worked for you. Include the
-				medication name, your experience, and optionally a rating, experience
-				type, or photos.
+				medication name, your experience, and optionally a rating or experience
+				type.
 			</p>
 
 			<form onSubmit={handleSubmit} className="space-y-6">
-				{/* Medication Info (if provided) */}
-				{(medicationId || initialMedicationName) && (
+				{/* Medication dropdown (when creating) */}
+				{!postId && (
+					<div className="space-y-2">
+						<Label>Medication *</Label>
+						{myMedications && myMedications.length > 0 ? (
+							<Select
+								value={selectedMedicationId}
+								onValueChange={setSelectedMedicationId}
+								required
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select a medication to share your experience" />
+								</SelectTrigger>
+								<SelectContent>
+									{myMedications.map((med) => (
+										<SelectItem key={med.id} value={med.id}>
+											{med.name ?? med.brandName ?? med.id}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						) : (
+							<div className="p-3 rounded-lg border border-dashed bg-muted/50 text-muted-foreground text-sm">
+								No medications in your list yet. Add medications from a scan or
+								your dashboard first, then come back to share an experience.
+							</div>
+						)}
+					</div>
+				)}
+
+				{/* Medication display when prefilled from URL */}
+				{!postId && (medicationId || initialMedicationName) && selectedMedicationId && (
 					<div className="p-3 rounded-lg bg-muted">
-						<p className="text-sm text-muted-foreground">Medication</p>
+						<p className="text-sm text-muted-foreground">Sharing experience for</p>
 						<p className="font-medium text-foreground">
-							{initialMedicationName || "Selected medication"}
+							{initialMedicationName ??
+								myMedications?.find((m) => m.id === selectedMedicationId)?.name ??
+								myMedications?.find((m) => m.id === selectedMedicationId)?.brandName ??
+								"Selected medication"}
 						</p>
 					</div>
 				)}
@@ -244,63 +270,6 @@ export function PostForm({
 							<SelectItem value="side_effects">Side Effects Reported</SelectItem>
 						</SelectContent>
 					</Select>
-				</div>
-
-				{/* Images */}
-				<div className="space-y-2">
-					<Label>Images (Optional, max 5)</Label>
-					<div className="space-y-2">
-						{imageUrls.length < 5 && (
-							<label className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-								<input
-									type="file"
-									accept="image/*"
-									multiple
-									onChange={handleImageUpload}
-									className="hidden"
-									disabled={uploading}
-								/>
-								<div className="text-center">
-									{uploading ? (
-										<Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-									) : (
-										<>
-											<Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-											<p className="text-sm text-muted-foreground">
-												Click to upload images
-											</p>
-										</>
-									)}
-								</div>
-							</label>
-						)}
-						{imageUrls.length > 0 && (
-							<div className="grid grid-cols-3 gap-2">
-								{imageUrls.map((url, index) => (
-									<div
-										key={index}
-										className="relative aspect-square rounded-lg overflow-hidden bg-muted"
-									>
-										<Image
-											src={url}
-											alt={`Upload ${index + 1}`}
-											fill
-											className="object-cover"
-										/>
-										<Button
-											type="button"
-											variant="destructive"
-											size="icon"
-											className="absolute top-1 right-1 h-6 w-6"
-											onClick={() => removeImage(index)}
-										>
-											<X className="h-3 w-3" />
-										</Button>
-									</div>
-								))}
-							</div>
-						)}
-					</div>
 				</div>
 
 				{/* Privacy */}

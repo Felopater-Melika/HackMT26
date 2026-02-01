@@ -58,7 +58,8 @@ export default function SocialFeedPage() {
 				(post) =>
 					post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
 					post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-					post.medicationName?.toLowerCase().includes(searchQuery.toLowerCase()),
+					post.medication?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+					post.medication?.brandName?.toLowerCase().includes(searchQuery.toLowerCase()),
 			)
 		: posts;
 

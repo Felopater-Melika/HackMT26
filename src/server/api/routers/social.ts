@@ -9,11 +9,61 @@ import {
 	user,
 	userProfiles,
 	medications,
+	userMedications,
+	scans,
+	scanMedications,
 } from "@/server/db/schema";
 import { eq, desc, and, or, sql, count, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 export const socialRouter = createTRPCRouter({
+	// Get current user's medications (for post form dropdown)
+	// Includes both: user_medications list AND medications from their scans
+	getMyMedications: protectedProcedure.query(async ({ ctx }) => {
+		const userId = ctx.session.user.id;
+
+		// From user_medications (explicitly added)
+		const fromUserList = await ctx.db
+			.select({
+				id: medications.id,
+				name: medications.name,
+				brandName: medications.brandName,
+			})
+			.from(userMedications)
+			.innerJoin(medications, eq(userMedications.medicationId, medications.id))
+			.where(eq(userMedications.userId, userId));
+
+		// From scans (medications detected in their scans)
+		const fromScans = await ctx.db
+			.select({
+				id: medications.id,
+				name: medications.name,
+				brandName: medications.brandName,
+			})
+			.from(scanMedications)
+			.innerJoin(scans, eq(scanMedications.scanId, scans.id))
+			.innerJoin(medications, eq(scanMedications.medicationId, medications.id))
+			.where(eq(scans.userId, userId));
+
+		// Dedupe by id and sort by name
+		const byId = new Map<
+			string,
+			{ id: string; name: string | null; brandName: string | null }
+		>();
+		for (const row of [...fromUserList, ...fromScans]) {
+			byId.set(row.id, {
+				id: row.id,
+				name: row.name,
+				brandName: row.brandName,
+			});
+		}
+		return Array.from(byId.values()).sort((a, b) => {
+			const nameA = (a.name ?? a.brandName ?? "").toLowerCase();
+			const nameB = (b.name ?? b.brandName ?? "").toLowerCase();
+			return nameA.localeCompare(nameB);
+		});
+	}),
+
 	// Get all posts (feed)
 	getFeed: publicProcedure
 		.input(
@@ -234,8 +284,7 @@ export const socialRouter = createTRPCRouter({
 	createPost: protectedProcedure
 		.input(
 			z.object({
-				medicationId: z.string().uuid().optional(),
-				medicationName: z.string().optional(),
+				medicationId: z.string().uuid(),
 				title: z.string().min(1).max(200),
 				content: z.string().min(1).max(5000),
 				rating: z.number().min(1).max(5).optional(),
@@ -243,32 +292,15 @@ export const socialRouter = createTRPCRouter({
 					.enum(["positive", "negative", "neutral", "side_effects"])
 					.optional(),
 				isPublic: z.boolean().default(true),
-				imageUrls: z
-					.array(z.string())
-					.max(5)
-					.optional()
-					.default([])
-					.refine(
-						(urls) => urls.every((url) => url.startsWith("http") || url === ""),
-						{
-							message: "All image URLs must be valid HTTP/HTTPS URLs",
-						},
-					),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				// Filter out empty strings and invalid URLs
-				const validImageUrls = (input.imageUrls || []).filter(
-					(url) => url && url.startsWith("http"),
-				);
-
 				const [newPost] = await ctx.db
 					.insert(posts)
 					.values({
 						userId: ctx.session.user.id,
 						medicationId: input.medicationId,
-						medicationName: input.medicationName,
 						title: input.title,
 						content: input.content,
 						rating: input.rating,
@@ -279,17 +311,6 @@ export const socialRouter = createTRPCRouter({
 
 				if (!newPost) {
 					throw new Error("Failed to create post");
-				}
-
-				// Insert images if provided
-				if (validImageUrls.length > 0) {
-					await ctx.db.insert(postImages).values(
-						validImageUrls.map((url, index) => ({
-							postId: newPost.id,
-							imageUrl: url,
-							order: index,
-						})),
-					);
 				}
 
 				// If rating provided, create/update medication rating

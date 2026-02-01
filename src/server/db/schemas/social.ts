@@ -19,10 +19,9 @@ export const posts = createTable(
 		userId: text("user_id")
 			.references(() => user.id, { onDelete: "cascade" })
 			.notNull(),
-		medicationId: uuid("medication_id").references(() => medications.id, {
-			onDelete: "set null",
-		}),
-		medicationName: text("medication_name"), // Store name even if medication is deleted
+		medicationId: uuid("medication_id")
+			.references(() => medications.id, { onDelete: "restrict" })
+			.notNull(),
 		title: text("title").notNull(),
 		content: text("content").notNull(),
 		rating: integer("rating"), // 1-5 star rating
