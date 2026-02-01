@@ -9,10 +9,10 @@ import {
   Scan,
   LayoutDashboard,
   User,
-  MessageSquare,
   Pill,
   Network,
   BarChart3,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -80,7 +80,7 @@ export function Nav() {
     { href: '/app/medications', label: 'My Meds', icon: Pill },
     { href: '/app/interactions', label: 'Interactions', icon: Network },
     { href: '/app/insights', label: 'Insights', icon: BarChart3 },
-    { href: '/app/social', label: 'Community', icon: MessageSquare },
+    { href: '/app/search', label: 'Search', icon: Search },
     { href: '/app/profile', label: 'Profile', icon: User },
   ];
 

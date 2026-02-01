@@ -67,7 +67,15 @@ export function MedicationSearch() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && query.trim()) analyzeMedication({ medicationName: query.trim() });
+                if (e.key === "Enter") {
+                  // Always clear dropdown on Enter
+                  setSuggestions([]);
+
+                  // If there's a query, run the analysis
+                  if (query.trim()) {
+                    analyzeMedication({ medicationName: query.trim() });
+                  }
+                }
               }}
               className="flex-1"
             />
@@ -101,27 +109,14 @@ export function MedicationSearch() {
         {/* Analysis result (reuses MedicationAnalysisCard layout) */}
         {data && (
           <div className="mt-6">
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <h3 className="font-bold text-xl text-foreground">{data.medicationName}</h3>
-                <div className="mt-2 flex items-center gap-2">
-                  {data.requiresAttention ? (
-                    <><AlertCircle className="h-5 w-5 text-destructive"/><span className="font-medium text-destructive text-sm">Requires Attention</span></>
-                  ) : (
-                    <><CheckCircle className="h-5 w-5 text-green-600"/><span className="font-medium text-green-600 text-sm">Generally Safe</span></>
-                  )}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-bold text-3xl text-foreground">{data.safetyScore}</div>
-                <div className="text-muted-foreground text-xs">Safety Score</div>
-              </div>
+            <div className="mb-4">
+              <h3 className="font-bold text-xl text-foreground">{data.medicationName}</h3>
             </div>
 
             {data.warnings?.length > 0 && (
-              <div className="mb-4">
-                <h4 className="mb-2 font-semibold text-foreground text-sm">Warnings</h4>
-                <ul className="space-y-1">
+              <div className="mb-4 rounded-lg border bg-card p-4">
+                <h4 className="mb-3 font-semibold text-foreground">Warnings</h4>
+                <ul className="space-y-2">
                   {data.warnings.map((w: string, i: number) => (
                     <li key={i} className="rounded-md bg-destructive/10 px-3 py-2 text-sm">{w}</li>
                   ))}
@@ -130,31 +125,15 @@ export function MedicationSearch() {
             )}
 
             {data.interactions?.length > 0 && (
-              <div className="mb-4">
-                <h4 className="mb-2 font-semibold text-foreground text-sm">Potential Interactions</h4>
-                <ul className="space-y-1">
+              <div className="mb-4 rounded-lg border bg-card p-4">
+                <h4 className="mb-3 font-semibold text-foreground">Potential Interactions</h4>
+                <ul className="space-y-2">
                   {data.interactions.map((it: string, i: number) => (
                     <li key={i} className="rounded-md bg-muted px-3 py-2 text-sm">{it}</li>
                   ))}
                 </ul>
               </div>
             )}
-
-            {data.recommendations?.length > 0 && (
-              <div className="mb-4">
-                <h4 className="mb-2 font-semibold text-foreground text-sm">Recommendations</h4>
-                <ul className="space-y-1">
-                  {data.recommendations.map((r: string, i: number) => (
-                    <li key={i} className="rounded-md bg-primary/10 px-3 py-2 text-sm">{r}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div>
-              <h4 className="mb-2 font-semibold text-foreground text-sm">Detailed Analysis</h4>
-              <div className="rounded-md bg-card p-4 text-sm leading-relaxed whitespace-pre-wrap border">{data.analysis}</div>
-            </div>
           </div>
         )}
       </Card>
