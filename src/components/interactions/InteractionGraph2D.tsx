@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { GraphData, GraphNode } from '@/types/graph';
 import { getHighlightedData } from '@/lib/graph-utils';
@@ -33,13 +33,29 @@ export function InteractionGraph2D({
 }: InteractionGraph2DProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fgRef = useRef<any>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Fit to view on load
+  // Fit to view on load - center and show all nodes
   useEffect(() => {
     if (fgRef.current && graphData.nodes.length > 0) {
-      setTimeout(() => {
-        fgRef.current?.zoomToFit(400, 50);
-      }, 500);
+      // Reset initialization state when nodes change
+      setIsInitialized(false);
+
+      // Initial zoom to fit after simulation starts
+      const timer1 = setTimeout(() => {
+        fgRef.current?.zoomToFit(400, 80);
+      }, 300);
+
+      // Second zoom to fit after simulation settles
+      const timer2 = setTimeout(() => {
+        fgRef.current?.zoomToFit(600, 80);
+        setIsInitialized(true);
+      }, 1000);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
     }
   }, [graphData.nodes.length]);
 
@@ -62,20 +78,22 @@ export function InteractionGraph2D({
   const handleNodeHover = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (node: any) => {
-      if (onNodeHover) {
-        if (node && typeof node.x === 'number' && typeof node.y === 'number') {
-          // Get screen coordinates
-          try {
-            const pos = fgRef.current?.graph2ScreenCoords(node.x, node.y);
-            if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
-              onNodeHover(node as GraphNode, pos);
-            }
-          } catch {
-            // Ignore errors during coordinate conversion
+      if (!onNodeHover) return;
+
+      if (node && typeof node.x === 'number' && typeof node.y === 'number') {
+        // Get screen coordinates
+        try {
+          const pos = fgRef.current?.graph2ScreenCoords(node.x, node.y);
+          if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+            onNodeHover(node as GraphNode, { x: pos.x, y: pos.y });
+          } else {
+            onNodeHover(null, { x: 0, y: 0 });
           }
-        } else {
+        } catch {
           onNodeHover(null, { x: 0, y: 0 });
         }
+      } else {
+        onNodeHover(null, { x: 0, y: 0 });
       }
     },
     [onNodeHover]
@@ -157,10 +175,16 @@ export function InteractionGraph2D({
       linkDirectionalParticleWidth={4}
       onNodeClick={handleNodeClick}
       onNodeHover={handleNodeHover}
-      d3AlphaDecay={0.01}
-      d3VelocityDecay={0.2}
-      warmupTicks={100}
-      cooldownTicks={200}
+      onEngineStop={() => {
+        // Zoom to fit once simulation settles
+        if (fgRef.current && !isInitialized) {
+          fgRef.current.zoomToFit(600, 80);
+        }
+      }}
+      d3AlphaDecay={0.02}
+      d3VelocityDecay={0.3}
+      warmupTicks={50}
+      cooldownTicks={100}
       enableNodeDrag={true}
       enableZoomInteraction={true}
       enablePanInteraction={true}

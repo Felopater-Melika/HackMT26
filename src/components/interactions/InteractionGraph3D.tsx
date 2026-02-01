@@ -35,12 +35,34 @@ export function InteractionGraph3D({
   const fgRef = useRef<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Auto-rotate the graph
+  // Initialize camera position and zoom to fit
+  useEffect(() => {
+    if (fgRef.current && graphData.nodes.length > 0) {
+      // Set initial close camera position
+      fgRef.current?.cameraPosition({ x: 0, y: 0, z: 200 });
+
+      // Wait for simulation to settle, then zoom to fit all nodes
+      const timer1 = setTimeout(() => {
+        fgRef.current?.zoomToFit(600, 50);
+      }, 800);
+
+      const timer2 = setTimeout(() => {
+        setIsInitialized(true);
+      }, 1500);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
+  }, [graphData.nodes.length]);
+
+  // Auto-rotate the graph (only after initialized)
   useEffect(() => {
     if (!fgRef.current || !isInitialized) return;
 
     let angle = 0;
-    const distance = 300;
+    const distance = 150; // Closer distance for better visibility
 
     const rotateInterval = setInterval(() => {
       if (!selectedNodeId) {
@@ -54,17 +76,6 @@ export function InteractionGraph3D({
 
     return () => clearInterval(rotateInterval);
   }, [isInitialized, selectedNodeId]);
-
-  // Initialize camera position and zoom to fit
-  useEffect(() => {
-    if (fgRef.current && graphData.nodes.length > 0) {
-      // Wait for simulation to settle, then zoom to fit
-      setTimeout(() => {
-        fgRef.current?.zoomToFit(400, 100);
-        setIsInitialized(true);
-      }, 500);
-    }
-  }, [graphData.nodes.length]);
 
   const handleNodeClick = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,20 +105,22 @@ export function InteractionGraph3D({
   const handleNodeHover = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (node: any) => {
-      if (onNodeHover) {
-        if (node && typeof node.x === 'number' && typeof node.y === 'number' && typeof node.z === 'number') {
-          // Get screen coordinates
-          try {
-            const pos = fgRef.current?.graph2ScreenCoords(node.x, node.y, node.z);
-            if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
-              onNodeHover(node as GraphNode, pos);
-            }
-          } catch {
-            // Ignore errors during coordinate conversion
+      if (!onNodeHover) return;
+
+      if (node && typeof node.x === 'number' && typeof node.y === 'number' && typeof node.z === 'number') {
+        // Get screen coordinates
+        try {
+          const pos = fgRef.current?.graph2ScreenCoords(node.x, node.y, node.z);
+          if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+            onNodeHover(node as GraphNode, { x: pos.x, y: pos.y });
+          } else {
+            onNodeHover(null, { x: 0, y: 0 });
           }
-        } else {
+        } catch {
           onNodeHover(null, { x: 0, y: 0 });
         }
+      } else {
+        onNodeHover(null, { x: 0, y: 0 });
       }
     },
     [onNodeHover]
@@ -135,7 +148,7 @@ export function InteractionGraph3D({
       nodeColor="color"
       nodeVal="val"
       nodeResolution={16}
-      nodeRelSize={8}
+      nodeRelSize={6}
       linkColor="color"
       linkWidth={3}
       linkDirectionalParticles={3}
@@ -143,10 +156,16 @@ export function InteractionGraph3D({
       linkDirectionalParticleWidth={3}
       onNodeClick={handleNodeClick}
       onNodeHover={handleNodeHover}
-      d3AlphaDecay={0.01}
-      d3VelocityDecay={0.2}
-      warmupTicks={100}
-      cooldownTicks={200}
+      onEngineStop={() => {
+        // Zoom to fit once simulation settles
+        if (fgRef.current && !isInitialized) {
+          fgRef.current.zoomToFit(600, 50);
+        }
+      }}
+      d3AlphaDecay={0.02}
+      d3VelocityDecay={0.3}
+      warmupTicks={50}
+      cooldownTicks={100}
       controlType="orbit"
       enableNodeDrag={true}
       enableNavigationControls={true}
