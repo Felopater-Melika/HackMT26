@@ -1,5 +1,6 @@
 export * from "./schemas/auth";
 export * from "./schemas/conditions";
+export * from "./schemas/medication-deep-dives";
 export * from "./schemas/medications";
 export * from "./schemas/payments";
 export * from "./schemas/profiles";

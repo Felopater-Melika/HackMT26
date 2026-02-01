@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "medication_deep_dives_user_medication_idx" ON "medication_deep_dives" USING btree ("user_id","medication_id");

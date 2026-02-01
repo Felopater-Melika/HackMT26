@@ -20,7 +20,21 @@
       "idx": 2,
       "version": "7",
       "when": 1767798555167,
-      "tag": "0002_demonic_next_avengers",
+      "tag": "0002_add_medication_label",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769895141047,
+      "tag": "0003_living_warstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769900490736,
+      "tag": "0004_free_piledriver",
       "breakpoints": true
     }
   ]

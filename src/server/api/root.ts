@@ -2,6 +2,7 @@ import { ocrRouter } from "@/server/api/routers/ocr";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { conditionsRouter } from "./routers/conditions";
 import { medicationAnalysisRouter } from "./routers/medication-analysis";
+import { medicationDeepDiveRouter } from "./routers/medication-deep-dive";
 import { medicationsRouter } from "./routers/medications";
 import { profileRouter } from "./routers/profile";
 import { reportsRouter } from "./routers/reports";
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
 	ocr: ocrRouter,
 	medications: medicationsRouter,
 	medicationAnalysis: medicationAnalysisRouter,
+	medicationDeepDive: medicationDeepDiveRouter,
 	reports: reportsRouter,
 	usage: usageRouter,
 });

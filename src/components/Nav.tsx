@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LogOut, Scan, LayoutDashboard, User } from 'lucide-react';
+import { LogOut, Scan, LayoutDashboard, User, Pill } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { api } from '@/trpc/react';
@@ -68,6 +68,7 @@ export function Nav() {
   const navItems = [
     { href: '/app/scan', label: 'Scan', icon: Scan },
     { href: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/app/medications', label: 'My Medications', icon: Pill },
     { href: '/app/profile', label: 'Profile', icon: User },
   ];
 

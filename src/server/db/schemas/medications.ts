@@ -48,6 +48,7 @@ export const userMedications = createTable(
 		addedFromScan: boolean("added_from_scan"),
 		dosage: text("dosage"),
 		frequency: text("frequency"),
+		medicationLabel: jsonb("medication_label"),
 		createdAt: timestamp("created_at").defaultNow(),
 	},
 	(t) => ({

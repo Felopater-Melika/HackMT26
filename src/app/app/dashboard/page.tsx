@@ -10,15 +10,39 @@ import {
 	ChevronUp,
 	Pill,
 	Plus,
+	FileText,
+	CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/trpc/react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export default function DashboardPage() {
 	const { data: reports, isLoading } = api.reports.getAll.useQuery();
 	const { data: usage } = api.usage.getUsage.useQuery();
+	// Get all deep-dives to check which medications have reports
+	const { data: deepDives } = api.medicationDeepDive.getAll.useQuery();
+
+	// Create a map of medication name (lowercase) to deep-dive for quick lookup
+	const deepDiveByMedName = useMemo(() => {
+		const map = new Map<string, { id: string; medicationId: string }>();
+		deepDives?.forEach((dd) => {
+			const name = dd.medication?.brandName || dd.medication?.name;
+			if (name) {
+				map.set(name.toLowerCase(), {
+					id: dd.id,
+					medicationId: dd.medicationId,
+				});
+			}
+		});
+		return map;
+	}, [deepDives]);
+
+	// Helper to check if a medication has an existing report
+	const getExistingReport = (medicationName: string) => {
+		return deepDiveByMedName.get(medicationName.toLowerCase());
+	};
 
 	const [expandedReports, setExpandedReports] = useState<Set<string>>(
 		new Set(),
@@ -190,12 +214,44 @@ export default function DashboardPage() {
 																	)}
 																</div>
 																{med.success && (
-																	<div className="text-right">
-																		<div className="font-bold text-2xl text-foreground">
-																			{med.safetyScore}
-																		</div>
-																		<div className="text-muted-foreground text-xs">
-																			Safety Score
+																	<div className="flex items-center gap-3">
+																		{(() => {
+																			const existingReport = getExistingReport(med.medicationName);
+																			return existingReport ? (
+																				<Link
+																					href={`/app/medications/${existingReport.medicationId}/deep-dive`}
+																					title="View Detailed Report"
+																				>
+																					<Button
+																						variant="ghost"
+																						size="icon"
+																						className="h-8 w-8 text-green-600 hover:text-green-700"
+																					>
+																						<CheckCircle className="h-4 w-4" />
+																					</Button>
+																				</Link>
+																			) : (
+																				<Link
+																					href={`/app/medications/new/deep-dive?medicationName=${encodeURIComponent(med.medicationName)}&scanId=${report.id}`}
+																					title="Generate Detailed Report"
+																				>
+																					<Button
+																						variant="ghost"
+																						size="icon"
+																						className="h-8 w-8 text-muted-foreground hover:text-primary"
+																					>
+																						<FileText className="h-4 w-4" />
+																					</Button>
+																				</Link>
+																			);
+																		})()}
+																		<div className="text-right">
+																			<div className="font-bold text-2xl text-foreground">
+																				{med.safetyScore}
+																			</div>
+																			<div className="text-muted-foreground text-xs">
+																				Safety Score
+																			</div>
 																		</div>
 																	</div>
 																)}
@@ -252,6 +308,40 @@ export default function DashboardPage() {
 																				</ul>
 																			</div>
 																		)}
+
+																		{/* Detailed Report Button */}
+																		<div className="mt-4 pt-4 border-t">
+																			{(() => {
+																				const existingReport = getExistingReport(med.medicationName);
+																				return existingReport ? (
+																					<Link
+																						href={`/app/medications/${existingReport.medicationId}/deep-dive`}
+																					>
+																						<Button
+																							variant="outline"
+																							size="sm"
+																							className="w-full"
+																						>
+																							<CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+																							View Detailed Report
+																						</Button>
+																					</Link>
+																				) : (
+																					<Link
+																						href={`/app/medications/new/deep-dive?medicationName=${encodeURIComponent(med.medicationName)}&scanId=${report.id}`}
+																					>
+																						<Button
+																							variant="outline"
+																							size="sm"
+																							className="w-full"
+																						>
+																							<FileText className="mr-2 h-4 w-4" />
+																							Generate Report
+																						</Button>
+																					</Link>
+																				);
+																			})()}
+																		</div>
 																</>
 															) : (
 																<div className="rounded-md bg-destructive/10 p-3">
