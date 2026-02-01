@@ -43,6 +43,13 @@
       "when": 1769911949000,
       "tag": "0005_drop_tokens_used",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769916343489,
+      "tag": "0003_mighty_screwball",
+      "breakpoints": true
     }
   ]
 }

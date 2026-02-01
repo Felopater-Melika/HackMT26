@@ -6,3 +6,4 @@ export * from "./schemas/payments";
 export * from "./schemas/profiles";
 export * from "./schemas/reports";
 export * from "./schemas/scans";
+export * from "./schemas/social";

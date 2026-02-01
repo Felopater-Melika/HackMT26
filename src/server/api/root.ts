@@ -8,6 +8,7 @@ import { medicationsRouter } from "./routers/medications";
 import { profileRouter } from "./routers/profile";
 import { reportsRouter } from "./routers/reports";
 import { usageRouter } from "./routers/usage";
+import { socialRouter } from "./routers/social";
 
 /**
  * This is the primary router for your server.
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
 	medicationDeepDive: medicationDeepDiveRouter,
 	reports: reportsRouter,
 	usage: usageRouter,
+	social: socialRouter,
 });
 
 // export type definition of API
