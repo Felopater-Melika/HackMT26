@@ -82,15 +82,9 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 	const [isInitialized, setIsInitialized] = useState(false);
 
 	const router = useRouter();
-	const utils = api.useUtils();
 	const ocrMutation = api.ocr.analyzeImages.useMutation();
-	const medsAnalyzeMutation = api.medications.analyze.useMutation({
-		onSuccess: () => {
-			// Invalidate usage query after successful analysis
-			utils.usage.getUsage.invalidate();
-		},
-	});
-	const { data: usage } = api.usage.getUsage.useQuery();
+	const medsAnalyzeMutation = api.medications.analyze.useMutation();
+	const deepDiveMutation = api.medicationDeepDive.getOrCreate.useMutation();
 
 	// Load from localStorage on mount
 	useEffect(() => {
@@ -224,6 +218,8 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 		if (files.length === 0) return;
 		setLoading(true);
 		try {
+			toast.loading("Scanning medications...", { id: "scan-analyze" });
+
 			const base64Files = await Promise.all(
 				files.map(async (file) => {
 					const arrayBuffer = await file.arrayBuffer();
@@ -249,18 +245,80 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 						ocrLines: med.ocrLines ?? [],
 					}),
 				);
-				setRows((prev) => {
-					const map = new Map(prev.map((r) => [r.name, r]));
-					for (const r of parsedRows) {
-						map.set(r.name, r);
-					}
-					return Array.from(map.values());
+
+				if (parsedRows.length === 0) {
+					toast.error("No medications found", {
+						id: "scan-analyze",
+						description: "Could not extract any medications from the images.",
+					});
+					setFiles([]);
+					setLoading(false);
+					return;
+				}
+
+				// Auto-analyze the extracted medications
+				toast.loading(`Analyzing ${parsedRows.length} medication(s)...`, { id: "scan-analyze" });
+
+				const result = await medsAnalyzeMutation.mutateAsync({
+					medications: parsedRows.map((r) => ({
+						name: r.name,
+						dosage: r.dosage,
+						measurement: r.measurement,
+						ocrLines: r.ocrLines,
+					})),
 				});
+
+				console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+				console.log("📊 Analysis Complete:");
+				console.log("  Total Medications:", result.summary.totalMedications);
+				console.log("  Successfully Analyzed:", result.summary.analyzedSuccessfully);
+				console.log("  Average Safety Score:", result.summary.averageSafetyScore, "/100");
+				console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+				// Generate deep-dives for each medication
+				const successfulMeds = result.individualResults?.filter((r: { success: boolean }) => r.success) || [];
+				if (successfulMeds.length > 0) {
+					toast.loading(`Generating AI reports for ${successfulMeds.length} medication(s)...`, { id: "scan-analyze" });
+
+					for (const med of successfulMeds) {
+						try {
+							console.log(`📝 Generating deep-dive for: ${med.medicationName}`);
+							await deepDiveMutation.mutateAsync({
+								medicationName: med.medicationName,
+							});
+							console.log(`✅ Deep-dive generated for: ${med.medicationName}`);
+						} catch (error) {
+							console.error(`❌ Failed to generate deep-dive for ${med.medicationName}:`, error);
+						}
+					}
+				}
+
+				// Clear state
+				localStorage.removeItem(STORAGE_KEY);
+				setRows([]);
 				setSelected({});
+				setFiles([]);
+
+				toast.success("Complete!", {
+					id: "scan-analyze",
+					description: `Analyzed ${result.summary.analyzedSuccessfully} medication(s) with AI reports`,
+				});
+
+				// Redirect to dashboard
+				router.push("/app/dashboard");
+			} else {
+				toast.error("No medications found", {
+					id: "scan-analyze",
+					description: "Could not extract any medications from the images.",
+				});
 				setFiles([]);
 			}
 		} catch (error) {
-			console.error("OCR submission failed:", error);
+			console.error("Scan and analyze failed:", error);
+			toast.error("Analysis failed", {
+				id: "scan-analyze",
+				description: "Please try again or check console for details",
+			});
 		} finally {
 			setLoading(false);
 		}
@@ -276,14 +334,6 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 	};
 
 	const handleAnalyzeMedications = async () => {
-		// Check usage limit before proceeding
-		if (usage?.hasReachedLimit) {
-			toast.error("Scan limit reached", {
-				description: `You've used all ${usage.limit} scans. Please upgrade to continue.`,
-			});
-			return;
-		}
-
 		if (rows.length === 0) {
 			toast.error("No medications to analyze", {
 				description: "Please add medications before analyzing.",
@@ -466,75 +516,6 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 
 	return (
 		<div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-			{/* Usage Display Banner */}
-			{usage && (
-				<div className="mb-6 rounded-lg border-2 bg-gradient-to-r from-card to-card/50 p-4 shadow-lg">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-4">
-							<div
-								className={`flex h-12 w-12 items-center justify-center rounded-full ${
-									usage.hasReachedLimit
-										? "bg-destructive/20 text-destructive"
-										: usage.remaining === 1
-											? "bg-yellow-500/20 text-yellow-600"
-											: "bg-primary/20 text-primary"
-								}`}
-							>
-								<Scan className="h-6 w-6" />
-							</div>
-							<div>
-								<h3 className="font-semibold text-lg text-foreground">
-									Scan Usage
-								</h3>
-								<p className="text-muted-foreground text-sm">
-									{usage.hasReachedLimit
-										? "You've used all available scans"
-										: `${usage.remaining} scan${usage.remaining !== 1 ? "s" : ""} remaining`}
-								</p>
-							</div>
-						</div>
-						<div className="text-right">
-							<div
-								className={`font-bold text-3xl ${
-									usage.hasReachedLimit
-										? "text-destructive"
-										: usage.remaining === 1
-											? "text-yellow-600"
-											: "text-primary"
-								}`}
-							>
-								{usage.remaining}/{usage.limit}
-							</div>
-							<div className="mt-2 h-2 w-32 overflow-hidden rounded-full bg-muted">
-								<div
-									className={`h-full transition-all ${
-										usage.hasReachedLimit
-											? "w-full bg-destructive"
-											: usage.remaining === 1
-												? "w-1/3 bg-yellow-500"
-												: usage.remaining === 2
-													? "w-2/3 bg-primary"
-													: "w-full bg-primary"
-									}`}
-									style={{
-										width: `${(usage.remaining / usage.limit) * 100}%`,
-									}}
-								/>
-							</div>
-						</div>
-					</div>
-					{usage.hasReachedLimit && (
-						<div className="mt-4 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-destructive">
-							<AlertCircle className="h-5 w-5 shrink-0" />
-							<p className="text-sm font-medium">
-								You've reached your limit of {usage.limit} scans. Please upgrade to
-								continue analyzing medications.
-							</p>
-						</div>
-					)}
-				</div>
-			)}
-
 			{/* Header */}
 			<div className="mb-8">
 				<h1 className="mb-2 font-bold text-3xl text-foreground">
@@ -601,11 +582,11 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 									variant="default"
 									size="sm"
 									onClick={handleSubmit}
-									disabled={loading}
+									disabled={loading || medsAnalyzeMutation.isPending}
 									className="gap-2"
 								>
 									<Scan className="h-4 w-4" />
-									{loading ? "Processing..." : "Scan Files"}
+									{loading || medsAnalyzeMutation.isPending ? "Scanning & Analyzing..." : "Scan & Analyze"}
 								</Button>
 							</div>
 							<div className="flex flex-wrap gap-3">
@@ -685,7 +666,6 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 										onClick={handleAnalyzeMedications}
 										disabled={
 											medsAnalyzeMutation.isPending ||
-											usage?.hasReachedLimit ||
 											rows.length === 0
 										}
 										className="gap-2"
@@ -693,9 +673,7 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 										<Scan className="h-4 w-4" />
 										{medsAnalyzeMutation.isPending
 											? "Analyzing..."
-											: usage?.hasReachedLimit
-												? "Limit Reached"
-												: "Analyze All"}
+											: "Analyze All"}
 									</Button>
 								</div>
 							</div>

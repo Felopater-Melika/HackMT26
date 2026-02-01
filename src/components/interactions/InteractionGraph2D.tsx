@@ -86,8 +86,8 @@ export function InteractionGraph2D({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
       const opacity = node.opacity ?? 1;
-      const radius = Math.sqrt(node.val) * 2;
-      const fontSize = 12 / globalScale;
+      const radius = Math.sqrt(node.val) * 2.5; // Larger nodes
+      const fontSize = Math.max(10, 14 / globalScale);
 
       // Draw node circle with glow effect
       ctx.beginPath();
@@ -151,16 +151,16 @@ export function InteractionGraph2D({
       backgroundColor="rgba(10, 10, 26, 1)"
       nodeCanvasObject={nodeCanvasObject}
       linkColor="color"
-      linkWidth={2}
-      linkDirectionalParticles={2}
+      linkWidth={3}
+      linkDirectionalParticles={3}
       linkDirectionalParticleSpeed={0.01}
-      linkDirectionalParticleWidth={3}
+      linkDirectionalParticleWidth={4}
       onNodeClick={handleNodeClick}
       onNodeHover={handleNodeHover}
-      d3AlphaDecay={0.02}
-      d3VelocityDecay={0.3}
-      warmupTicks={50}
-      cooldownTicks={100}
+      d3AlphaDecay={0.01}
+      d3VelocityDecay={0.2}
+      warmupTicks={100}
+      cooldownTicks={200}
       enableNodeDrag={true}
       enableZoomInteraction={true}
       enablePanInteraction={true}

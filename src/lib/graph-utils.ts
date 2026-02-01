@@ -18,7 +18,7 @@ export function buildGraphData(deepDives: DeepDiveWithMedication[]): GraphData {
     nodes.push({
       id: dd.medicationId,
       name: medicationName,
-      val: 10 + interactions.length * 3, // Size based on interaction count
+      val: 20 + interactions.length * 5, // Larger size for visibility
       color: getNodeColor(confidence),
       interactions,
       confidence,
@@ -38,7 +38,7 @@ export function buildGraphData(deepDives: DeepDiveWithMedication[]): GraphData {
             interactionLower.includes(otherName.toLowerCase()) ||
             (otherBrandName && interactionLower.includes(otherBrandName.toLowerCase()))
           ) {
-            const key = [dd.medicationId, otherDd.medicationId].sort().join('-');
+            const key = [dd.medicationId, otherDd.medicationId].sort().join('::');
             if (!interactionMap.has(key)) {
               interactionMap.set(key, new Set());
             }
@@ -51,7 +51,7 @@ export function buildGraphData(deepDives: DeepDiveWithMedication[]): GraphData {
 
   // Build links from interaction map
   interactionMap.forEach((interactions, key) => {
-    const [source, target] = key.split('-');
+    const [source, target] = key.split('::');
     if (source && target) {
       links.push({
         source,
@@ -91,7 +91,13 @@ export function buildGraphData(deepDives: DeepDiveWithMedication[]): GraphData {
     }
   }
 
-  return { nodes, links };
+  // Filter out links that reference non-existent nodes
+  const nodeIds = new Set(nodes.map(n => n.id));
+  const validLinks = links.filter(link =>
+    nodeIds.has(link.source as string) && nodeIds.has(link.target as string)
+  );
+
+  return { nodes, links: validLinks };
 }
 
 /**

@@ -41,8 +41,8 @@ interface PostCardProps {
 		} | null;
 		createdAt: Date;
 		likesCount: number;
-		commentsCount: number;
-		userLiked: boolean;
+		commentsCount?: number;
+		userLiked?: boolean;
 		images: Array<{
 			id: string;
 			imageUrl: string;
@@ -209,7 +209,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
 					onClick={() => setShowComments(!showComments)}
 				>
 					<MessageCircle className="h-5 w-5 mr-2" />
-					{post.commentsCount}
+					{post.commentsCount ?? 0}
 				</Button>
 			</div>
 

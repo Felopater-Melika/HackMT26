@@ -11,8 +11,6 @@ import { SafetyScoreGauge } from '@/components/insights/SafetyScoreGauge';
 import { MedicationCountCard } from '@/components/insights/MedicationCountCard';
 import { ConditionCoverageChart } from '@/components/insights/ConditionCoverageChart';
 import { WarningsBySeverityChart } from '@/components/insights/WarningsBySeverityChart';
-import { ConfidenceTrendChart } from '@/components/insights/ConfidenceTrendChart';
-import { MedicationTimeline } from '@/components/insights/MedicationTimeline';
 
 import { BarChart3, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
@@ -99,16 +97,14 @@ export default function InsightsPage() {
             />
             <ConditionCoverageChart data={insights.conditionCoverage} delay={200} />
 
-            {/* Row 2: Warnings and Trends */}
-            <WarningsBySeverityChart
-              data={insights.warningsBySeverity}
-              topWarnings={insights.topWarnings}
-              delay={300}
-            />
-            <ConfidenceTrendChart data={insights.confidenceTrend} delay={400} />
-
-            {/* Row 3: Timeline */}
-            <MedicationTimeline data={insights.medicationTimeline} delay={500} />
+            {/* Row 2: Warnings - spans full width */}
+            <div className="md:col-span-2 lg:col-span-3">
+              <WarningsBySeverityChart
+                data={insights.warningsBySeverity}
+                topWarnings={insights.topWarnings}
+                delay={300}
+              />
+            </div>
           </div>
         )}
       </div>

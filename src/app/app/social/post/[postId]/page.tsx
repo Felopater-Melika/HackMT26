@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, use } from "react";
 import { PostCard } from "@/components/social/PostCard";
 import { Nav } from "@/components/Nav";
 import { api } from "@/trpc/react";
@@ -11,8 +11,9 @@ import { useRouter } from "next/navigation";
 export default function PostDetailPage({
 	params,
 }: {
-	params: { postId: string };
+	params: Promise<{ postId: string }>;
 }) {
+	const { postId } = use(params);
 	const router = useRouter();
 	const { data: session, isPending: sessionLoading } = authClient.useSession();
 
@@ -25,7 +26,7 @@ export default function PostDetailPage({
 
 	const { data: post, isLoading } = api.social.getPost.useQuery(
 		{
-			postId: params.postId,
+			postId: postId,
 		},
 		{
 			enabled: !!session, // Only fetch if authenticated

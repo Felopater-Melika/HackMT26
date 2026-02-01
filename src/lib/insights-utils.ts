@@ -83,6 +83,7 @@ export function confidenceToScore(
 
 /**
  * Calculates average safety score from all medications
+ * Based primarily on AI confidence level
  */
 function calculateAverageSafetyScore(
   deepDives: DeepDiveWithMedication[]
@@ -93,19 +94,10 @@ function calculateAverageSafetyScore(
 
   deepDives.forEach((dd) => {
     const confidence = dd.confidence as { overall: string } | null;
-    const warnings = (dd.personalizedWarnings as string[]) || [];
-    const sideEffects = dd.sideEffects as { serious?: string[] } | null;
-    const seriousSideEffects = sideEffects?.serious?.length || 0;
 
-    // Start with confidence-based score
-    let score = confidenceToScore(confidence);
-
-    // Deduct points for warnings and serious side effects
-    score -= warnings.length * 3;
-    score -= seriousSideEffects * 5;
-
-    // Clamp between 0 and 100
-    score = Math.max(0, Math.min(100, score));
+    // Safety score is based on confidence level
+    // high = 90, medium = 70, low = 40
+    const score = confidenceToScore(confidence);
     totalScore += score;
   });
 

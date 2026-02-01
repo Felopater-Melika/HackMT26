@@ -55,13 +55,14 @@ export function InteractionGraph3D({
     return () => clearInterval(rotateInterval);
   }, [isInitialized, selectedNodeId]);
 
-  // Initialize camera position
+  // Initialize camera position and zoom to fit
   useEffect(() => {
     if (fgRef.current && graphData.nodes.length > 0) {
+      // Wait for simulation to settle, then zoom to fit
       setTimeout(() => {
-        fgRef.current?.cameraPosition({ z: 300 });
+        fgRef.current?.zoomToFit(400, 100);
         setIsInitialized(true);
-      }, 100);
+      }, 500);
     }
   }, [graphData.nodes.length]);
 
@@ -134,17 +135,18 @@ export function InteractionGraph3D({
       nodeColor="color"
       nodeVal="val"
       nodeResolution={16}
+      nodeRelSize={8}
       linkColor="color"
-      linkWidth={2}
-      linkDirectionalParticles={2}
-      linkDirectionalParticleSpeed={0.005}
-      linkDirectionalParticleWidth={2}
+      linkWidth={3}
+      linkDirectionalParticles={3}
+      linkDirectionalParticleSpeed={0.008}
+      linkDirectionalParticleWidth={3}
       onNodeClick={handleNodeClick}
       onNodeHover={handleNodeHover}
-      d3AlphaDecay={0.02}
-      d3VelocityDecay={0.3}
-      warmupTicks={50}
-      cooldownTicks={100}
+      d3AlphaDecay={0.01}
+      d3VelocityDecay={0.2}
+      warmupTicks={100}
+      cooldownTicks={200}
       controlType="orbit"
       enableNodeDrag={true}
       enableNavigationControls={true}

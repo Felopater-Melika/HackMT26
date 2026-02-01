@@ -246,15 +246,15 @@ export default function MyMedicationsPage() {
 												<span className="text-sm">No analysis yet</span>
 											</div>
 											<Link
-												href={`/app/medications/new/deep-dive?medicationName=${encodeURIComponent(med.medication?.brandName || med.medication?.name || "")}`}
+												href="/app/scan"
 											>
 												<Button
 													variant="default"
 													className="w-full"
 													size="sm"
 												>
-													<FileText className="mr-2 h-4 w-4" />
-													Generate Report
+													<Plus className="mr-2 h-4 w-4" />
+													Run Scan to Generate
 												</Button>
 											</Link>
 										</>

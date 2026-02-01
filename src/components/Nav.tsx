@@ -1,8 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { authClient } from '@/lib/auth-client';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   LogOut,
@@ -16,48 +15,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { api } from '@/trpc/react';
 
 export function Nav() {
-  const router = useRouter();
   const pathname = usePathname();
-
-  console.log('🔵 Nav component rendering');
-
-  const {
-    data: usage,
-    isLoading,
-    error,
-  } = api.usage.getUsage.useQuery(undefined, {
-    retry: false,
-  });
-
-  // Debug logging
-  console.log('🔵 Nav - Usage query state:', {
-    usage,
-    isLoading,
-    error: error?.message,
-    hasData: !!usage,
-    usageValue: usage ? `${usage.remaining}/${usage.limit}` : 'no data',
-  });
-
-  if (error) {
-    console.error('❌ Nav - Usage query error:', error);
-    console.error('❌ Error details:', {
-      message: error.message,
-      shape: error.shape,
-      data: error.data,
-    });
-  }
-
-  console.log(
-    '🔵 Nav - About to render, usage display will show:',
-    usage
-      ? `${usage.remaining}/${usage.limit}`
-      : isLoading
-        ? 'loading'
-        : 'error/fallback'
-  );
 
   const handleSignOut = async () => {
     try {
@@ -117,45 +77,6 @@ export function Nav() {
           </div>
         </div>
         <div className='flex items-center gap-3'>
-          {(() => {
-            console.log('🔵 Nav - Rendering usage display, state:', {
-              isLoading,
-              error: !!error,
-              usage: !!usage,
-            });
-            return (
-              <div
-                className='flex items-center gap-2 rounded-lg border-2 border-primary/20 bg-card px-3 py-1.5 text-sm shadow-sm'
-                data-testid='usage-display'>
-                <Scan className='h-4 w-4 shrink-0 text-primary' />
-                <span className='hidden text-muted-foreground sm:inline'>
-                  Scans:
-                </span>
-                {isLoading ? (
-                  <span className='font-bold text-foreground'>...</span>
-                ) : error ? (
-                  <span
-                    className='font-bold text-destructive'
-                    title={error.message}>
-                    0/3
-                  </span>
-                ) : usage ? (
-                  <span
-                    className={`font-bold ${
-                      usage.hasReachedLimit
-                        ? 'text-destructive'
-                        : usage.remaining === 1
-                          ? 'text-yellow-600'
-                          : 'text-primary'
-                    }`}>
-                    {usage.remaining}/{usage.limit}
-                  </span>
-                ) : (
-                  <span className='font-bold text-foreground'>3/3</span>
-                )}
-              </div>
-            );
-          })()}
           <ThemeToggle />
           <Button
             variant='ghost'

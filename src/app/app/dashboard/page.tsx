@@ -9,6 +9,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Loader2,
   Pill,
   Plus,
   FileText,
@@ -23,10 +24,25 @@ import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const { data: reports, isLoading } = api.reports.getAll.useQuery();
-  const { data: usage } = api.usage.getUsage.useQuery();
   const utils = api.useUtils();
   // Get all deep-dives to check which medications have reports
   const { data: deepDives } = api.medicationDeepDive.getAll.useQuery();
+  const {
+    mutateAsync: triggerDeepDive,
+    isPending: isGeneratingDeepDive,
+  } = api.medicationDeepDive.getOrCreate.useMutation({
+    onSuccess: async () => {
+      toast.success('Deep-dive generated');
+      await Promise.all([
+        utils.medicationDeepDive.getAll.invalidate(),
+        utils.reports.getAll.invalidate(),
+      ]);
+    },
+    onError: (err) => {
+      toast.error(err.message ?? 'Failed to generate deep-dive');
+    },
+  });
+  const [generatingMedKey, setGeneratingMedKey] = useState<string | null>(null);
 
   // Create a map of medication name (lowercase) to deep-dive for quick lookup
   const deepDiveByMedName = useMemo(() => {
@@ -46,6 +62,20 @@ export default function DashboardPage() {
   // Helper to check if a medication has an existing report
   const getExistingReport = (medicationName: string) => {
     return deepDiveByMedName.get(medicationName.toLowerCase());
+  };
+
+  const handleGenerateDeepDive = async (
+    medicationName: string,
+    scanId?: string
+  ) => {
+    if (!medicationName) return;
+    const key = `${medicationName}-${scanId ?? ''}`;
+    setGeneratingMedKey(key);
+    try {
+      await triggerDeepDive({ medicationName, scanId });
+    } finally {
+      setGeneratingMedKey(null);
+    }
   };
 
   const [expandedReports, setExpandedReports] = useState<Set<string>>(
@@ -85,7 +115,6 @@ export default function DashboardPage() {
     api.reports.delete.useMutation({
       onSuccess: () => {
         utils.reports.getAll.invalidate();
-        utils.usage.getUsage.invalidate();
         toast.success('Report deleted successfully');
       },
       onError: (err) => {
@@ -112,7 +141,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <Link href='/app/scan'>
-            <Button disabled={usage?.hasReachedLimit}>
+            <Button>
               <Plus className='mr-2 h-4 w-4' />
               New Scan
             </Button>
@@ -132,15 +161,9 @@ export default function DashboardPage() {
               }
               placeholder='e.g. aspirin, metformin, ibuprofen'
               submitLabel='Analyze'
-              disabled={usage?.hasReachedLimit}
               isPending={isSearching}
               mode='analyze'
             />
-            {usage?.hasReachedLimit && (
-              <p className='mt-2 text-destructive text-xs'>
-                You've reached your scan limit. Upgrade to search more.
-              </p>
-            )}
           </div>
         </Card>
 
@@ -251,47 +274,6 @@ export default function DashboardPage() {
                   )}
                 </Card>
               ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Usage Card */}
-        {usage && (
-          <Card className='mb-6 border'>
-            <div className='p-4'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <h3 className='mb-1 font-semibold text-sm text-foreground'>
-                    Scan Usage
-                  </h3>
-                  <p className='text-muted-foreground text-sm'>
-                    {usage.hasReachedLimit
-                      ? "You've reached your limit"
-                      : `${usage.remaining} scan${
-                          usage.remaining !== 1 ? 's' : ''
-                        } remaining`}
-                  </p>
-                  <DownloadReportButton reportId={reports?.[0]?.id || ''} />
-                </div>
-                <div className='text-right'>
-                  <div
-                    className={`font-bold text-2xl ${
-                      usage.hasReachedLimit
-                        ? 'text-destructive'
-                        : usage.remaining === 1
-                        ? 'text-yellow-600'
-                        : 'text-primary'
-                    }`}>
-                    {usage.remaining} / {usage.limit}
-                  </div>
-                </div>
-              </div>
-              {usage.hasReachedLimit && (
-                <div className='mt-3 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive'>
-                  ⚠️ You've used all {usage.limit} scans. Upgrade to continue
-                  analyzing medications.
-                </div>
-              )}
             </div>
           </Card>
         )}
@@ -408,6 +390,7 @@ export default function DashboardPage() {
                                       const existingReport = getExistingReport(
                                         med.medicationName
                                       );
+                                      const generatingKey = `${med.medicationName}-${report.id}`;
                                       return existingReport ? (
                                         <Link
                                           href={`/app/medications/${existingReport.medicationId}/deep-dive`}
@@ -420,18 +403,28 @@ export default function DashboardPage() {
                                           </Button>
                                         </Link>
                                       ) : (
-                                        <Link
-                                          href={`/app/medications/new/deep-dive?medicationName=${encodeURIComponent(
-                                            med.medicationName
-                                          )}&scanId=${report.id}`}
-                                          title='Generate Detailed Report'>
-                                          <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            className='h-8 w-8 text-muted-foreground hover:text-primary'>
+                                        <Button
+                                          variant='ghost'
+                                          size='icon'
+                                          className='h-8 w-8 text-muted-foreground hover:text-primary'
+                                          title='Retry generating detailed report'
+                                          disabled={
+                                            isGeneratingDeepDive &&
+                                            generatingMedKey === generatingKey
+                                          }
+                                          onClick={() =>
+                                            handleGenerateDeepDive(
+                                              med.medicationName,
+                                              report.id
+                                            )
+                                          }>
+                                          {isGeneratingDeepDive &&
+                                          generatingMedKey === generatingKey ? (
+                                            <Loader2 className='h-4 w-4 animate-spin' />
+                                          ) : (
                                             <FileText className='h-4 w-4' />
-                                          </Button>
-                                        </Link>
+                                          )}
+                                        </Button>
                                       );
                                     })()}
                                     <div className='text-right'>
@@ -502,6 +495,7 @@ export default function DashboardPage() {
                                       const existingReport = getExistingReport(
                                         med.medicationName
                                       );
+                                      const generatingKey = `${med.medicationName}-${report.id}`;
                                       return existingReport ? (
                                         <Link
                                           href={`/app/medications/${existingReport.medicationId}/deep-dive`}>
@@ -514,18 +508,31 @@ export default function DashboardPage() {
                                           </Button>
                                         </Link>
                                       ) : (
-                                        <Link
-                                          href={`/app/medications/new/deep-dive?medicationName=${encodeURIComponent(
-                                            med.medicationName
-                                          )}&scanId=${report.id}`}>
-                                          <Button
-                                            variant='outline'
-                                            size='sm'
-                                            className='w-full'>
+                                        <Button
+                                          variant='outline'
+                                          size='sm'
+                                          className='w-full'
+                                          disabled={
+                                            isGeneratingDeepDive &&
+                                            generatingMedKey === generatingKey
+                                          }
+                                          onClick={() =>
+                                            handleGenerateDeepDive(
+                                              med.medicationName,
+                                              report.id
+                                            )
+                                          }>
+                                          {isGeneratingDeepDive &&
+                                          generatingMedKey === generatingKey ? (
+                                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                          ) : (
                                             <FileText className='mr-2 h-4 w-4' />
-                                            Generate Report
-                                          </Button>
-                                        </Link>
+                                          )}
+                                          {isGeneratingDeepDive &&
+                                          generatingMedKey === generatingKey
+                                            ? 'Generating...'
+                                            : 'Retry Generate'}
+                                        </Button>
                                       );
                                     })()}
                                   </div>
