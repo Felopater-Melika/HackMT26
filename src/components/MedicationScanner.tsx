@@ -466,36 +466,6 @@ export function MedicationScanner({ profile }: MedicationScannerProps) {
 
 	return (
 		<div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-			{/* Type Medications - shown at the top */}
-			<div className="mb-12 rounded-lg border bg-card p-6 shadow-sm">
-				<h2 className="mb-4 font-bold text-3xl text-foreground">
-					Type Medications
-				</h2>
-				<MedicationTypeSearch
-					onSelect={(name) => {
-						const newRow: MedicationEntry = {
-							id: crypto.randomUUID(),
-							name,
-							dosage: null,
-							measurement: null,
-							ocrLines: [],
-						};
-						setRows((prev) => {
-							const exists = prev.some(
-								(r) => r.name.toLowerCase() === name.toLowerCase(),
-							);
-							if (exists) return prev;
-							return [...prev, newRow];
-						});
-					}}
-					placeholder="Start typing a medication name..."
-					submitLabel="Add"
-					disabled={usage?.hasReachedLimit}
-					mode="add"
-					hideHeader
-				/>
-			</div>
-
 			{/* Usage Display Banner */}
 			{usage && (
 				<div className="mb-6 rounded-lg border-2 bg-gradient-to-r from-card to-card/50 p-4 shadow-lg">
