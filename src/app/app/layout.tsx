@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 
 export const metadata: Metadata = {
 	title: "Dashboard",
@@ -15,6 +16,10 @@ export default function AppLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return <>{children}</>;
+	return (
+		<>
+			{children}
+			<ChatWidget />
+		</>
+	);
 }
-
