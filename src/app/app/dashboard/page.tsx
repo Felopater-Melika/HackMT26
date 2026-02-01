@@ -3,13 +3,12 @@
 import { Nav } from '@/components/Nav';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { DownloadReportButton } from '@/components/DowloadReportButton';
 import {
   AlertCircle,
   Calendar,
   ChevronDown,
   ChevronUp,
-  Loader2,
   Pill,
   Plus,
   FileText,
@@ -60,7 +59,7 @@ export default function DashboardPage() {
     onSuccess: (data) => {
       utils.reports.getAll.invalidate();
       toast.success('Analysis complete. Report saved to your history.');
-      if (data.reportId) {
+      if ('reportId' in data && data.reportId) {
         setExpandedReports((prev) =>
           new Set(prev).add(data.reportId as string)
         );
@@ -126,7 +125,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Search result (same format as scan report) */}
-        {searchResult?.individualResults?.length > 0 && (
+        {searchResult?.individualResults && searchResult.individualResults.length > 0 && (
           <Card className='mb-6 border-2 border-primary/20'>
             <div className='border-b p-4'>
               <h3 className='font-semibold text-foreground'>
@@ -252,6 +251,7 @@ export default function DashboardPage() {
                           usage.remaining !== 1 ? 's' : ''
                         } remaining`}
                   </p>
+                  <DownloadReportButton reportId={reports?.[0]?.id || ''} />
                 </div>
                 <div className='text-right'>
                   <div
